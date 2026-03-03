@@ -1,0 +1,9 @@
+{
+  "routes": {
+    "/": "./pages/main"
+  },
+  "error": {
+    "404": "./pages/error-404"
+  },
+  "globals": "./global"
+}

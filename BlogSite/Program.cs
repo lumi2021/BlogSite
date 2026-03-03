@@ -1,15 +1,21 @@
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http.HttpResults;
+using System.Text.Json;
+using BlogSite;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    //options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
-});
 
 
-var cacheDir = Directory.CreateTempSubdirectory("api-cache");
+builder.Services.ConfigureHttpJsonOptions(options => { });
+
+
+// setup
+var cacheDir = Directory.CreateTempSubdirectory("api-cache-");
+Console.WriteLine($"Cache directory created at '{cacheDir.FullName}'");
+var config = JsonSerializer.Deserialize(
+    File.ReadAllText("config.json"), ConfigJsonContext.Default.Configuration);
+Console.WriteLine($"Configuration file loaded");
+
+Api.Setup(cacheDir, config!);
 
 builder.Services.AddOpenApi();
 var app = builder.Build();

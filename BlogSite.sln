@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogSite", "BlogSite\BlogSite.csproj", "{741F7002-84CD-42FB-B1FE-48BEB3073186}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogSite.Frontend", "BlogSite.Frontend\BlogSite.Frontend.csproj", "{0C5A791D-B3B4-48F1-8797-316F38ED1F71}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{741F7002-84CD-42FB-B1FE-48BEB3073186}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{741F7002-84CD-42FB-B1FE-48BEB3073186}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{741F7002-84CD-42FB-B1FE-48BEB3073186}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C5A791D-B3B4-48F1-8797-316F38ED1F71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C5A791D-B3B4-48F1-8797-316F38ED1F71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C5A791D-B3B4-48F1-8797-316F38ED1F71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C5A791D-B3B4-48F1-8797-316F38ED1F71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

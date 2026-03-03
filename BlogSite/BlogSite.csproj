@@ -14,12 +14,19 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Pages\**\*">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Pages\main\index.html">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      <ProjectReference Include="..\BlogSite.Frontend\BlogSite.Frontend.csproj" />
     </ItemGroup>
+
+    <Target Name="MoveBinaries" AfterTargets="Publish">
+        <ItemGroup>
+            <Binaries Include="$(OutputPath)*.dll;$(OutputPath)*.pdb" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(OutputPath)lib" />
+
+        <Move
+                SourceFiles="@(Binaries)"
+                DestinationFolder="$(OutputPath)lib" />
+    </Target>
 
 </Project>
