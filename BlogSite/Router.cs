@@ -20,6 +20,15 @@ public class Router
         else NotFoundResponse(context);
     }
 
+    public void RegisterPage(string url, string pagePath)
+    {
+        switch (url)
+        {
+            case "@404": _notFoundPage = pagePath; break;
+            default: routesMap[url] = pagePath; break;
+        }
+    }
+    
     private void NotFoundResponse(HttpContext context)
     {
         context.Response.StatusCode = 404;

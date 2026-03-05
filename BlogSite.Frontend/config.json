@@ -1,7 +1,9 @@
 {
+	"use-system-tmp": false,
+	
 	"generic-routes": {
-		"/": "./pages/main",
-		"@404": "./pages/error-404"
+		"/": "./pages/main/index.html",
+		"@404": "./pages/error-404/index.html"
 	},
 
 	"sections": {
@@ -13,5 +15,5 @@
 		}
 	},
 
-	"global": "./global"
+	"global": "./global/index.html"
 }

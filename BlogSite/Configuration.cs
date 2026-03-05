@@ -5,6 +5,9 @@ namespace BlogSite;
 
 public class Configuration
 {
+    [JsonPropertyName("use-system-tmp")]
+    public bool UseSystemTmp { get; set; }
+    
     [JsonPropertyName("generic-routes")]
     public Dictionary<string, string> GenericRoutes { get; set; } = [];
     

@@ -5,6 +5,8 @@ public static class Api
     private static DirectoryInfo? _cacheDir;
     private static Configuration? _config;
     
+    public static Router Router { get; private set; }  = null!;
+    public static Baker Baker { get; private set; } = null!;
     public static DirectoryInfo CacheDirectory => _cacheDir ?? throw new InvalidOperationException();
     public static Configuration Configuration => _config ?? throw new InvalidOperationException();
     
@@ -12,5 +14,8 @@ public static class Api
     {
         _cacheDir = cache ?? throw new ArgumentNullException();
         _config = configuration ?? throw new ArgumentNullException();
+        
+        Router = new Router();
+        Baker = new Baker();
     }
 }

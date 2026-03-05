@@ -2,29 +2,33 @@ using System.Text.Json;
 using BlogSite;
 
 var builder = WebApplication.CreateSlimBuilder(args);
-
 builder.Services.ConfigureHttpJsonOptions(options => { });
 
 
-// setup
-var cacheDir = Directory.CreateTempSubdirectory("api-cache-");
-Console.WriteLine($"Cache directory created at '{cacheDir.FullName}'");
-var config = JsonSerializer.Deserialize(File.ReadAllText("config.json"), ConfigJsonContext.Default.Configuration);
+var config = JsonSerializer.Deserialize(File.ReadAllText("config.json"),
+    ConfigJsonContext.Default.Configuration) ?? throw new NotImplementedException();
 Console.WriteLine($"Configuration file loaded");
+
+DirectoryInfo cacheDir;
+if (!config.UseSystemTmp)
+{
+    if (Directory.Exists(".local-cache")) Directory.Delete(".local-cache", true);
+    cacheDir = Directory.CreateDirectory(".local-cache");
+}
+else cacheDir = Directory.CreateTempSubdirectory(".local-api-cache-");
+Console.WriteLine($"Cache directory created at '{cacheDir.FullName}'");
 
 Api.Setup(cacheDir, config!);
 
-// setup OpenApi
 builder.Services.AddOpenApi();
 var app = builder.Build();
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
-// setup router
-var router = new Router();
 app.Use(async (context, next) =>
 {
-    await router.Route(context, CancellationToken.None);
+    await Api.Router.Route(context, CancellationToken.None);
     await next();
 });
+Api.Baker.CompileAllPages();
 
 app.Run();

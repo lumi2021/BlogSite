@@ -16,4 +16,9 @@
       <Folder Include="docs\" />
     </ItemGroup>
 
+    <Target Name="CreateDirectories" AfterTargets="Build">
+        <MakeDir Directories="$(OutDir)blog" />
+        <MakeDir Directories="$(OutDir)docs" />
+    </Target>
+
 </Project>
