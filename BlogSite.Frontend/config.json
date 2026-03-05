@@ -1,9 +1,17 @@
 {
-  "routes": {
-    "/": "./pages/main"
-  },
-  "error": {
-    "404": "./pages/error-404"
-  },
-  "globals": "./global"
+	"generic-routes": {
+		"/": "./pages/main",
+		"@404": "./pages/error-404"
+	},
+
+	"sections": {
+		"blog": {
+			"path": "./blog"
+		},
+		"tutorials": {
+			"path": "./docs"
+		}
+	},
+
+	"global": "./global"
 }

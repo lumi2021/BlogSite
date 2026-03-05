@@ -11,4 +11,9 @@
                  CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="blog\" />
+      <Folder Include="docs\" />
+    </ItemGroup>
+
 </Project>

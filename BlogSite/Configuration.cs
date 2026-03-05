@@ -3,15 +3,26 @@ using System.Text.Json.Serialization;
 
 namespace BlogSite;
 
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
 public class Configuration
 {
-    public Dictionary<string, string> Routes = [];
-    public Dictionary<string, string> Error = [];
-    public string? Globals;
+    [JsonPropertyName("generic-routes")]
+    public Dictionary<string, string> GenericRoutes { get; set; } = [];
+    
+    [JsonPropertyName("sections")]
+    public Dictionary<string, Section> Sections { get; set; } = [];
+    
+    [JsonPropertyName("global")]
+    public string? Global { get; set; }
+}
+
+public record Section
+{
+    [JsonPropertyName("path")]
+    public string Path { get; set; }
 }
 
 [JsonSerializable(typeof(Configuration))]
+[JsonSerializable(typeof(Section))]
 internal partial class ConfigJsonContext : JsonSerializerContext
 {
 }
