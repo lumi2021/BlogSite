@@ -1,27 +1,27 @@
+using System.Collections;
 using AngleSharp;
 using AngleSharp.Dom;
+using IConfiguration = AngleSharp.IConfiguration;
 
 namespace BlogSite;
 
 public class Baker
 {
+    private readonly IBrowsingContext _angleContext;
+    private IDocument _globalDom = null!;
+    private string[] _globalStyles = [];
+    private string[] _globalScripts = [];
+    
+    public Baker()
+    {
+        var config = AngleSharp.Configuration.Default;
+        _angleContext = BrowsingContext.New(config);
+    }
+    
     public void CompileAllPages()
     {
         var config = Api.Configuration;
-
-        IBrowsingContext angleContext;
-        IDocument globalDom;
-
-        {
-            if (config.Global == null) throw new NotImplementedException();
-            if (!File.Exists(config.Global)) throw new FileNotFoundException($"file '{config.Global}' does not exist.");
-            var fileContent = File.ReadAllText(config.Global);
-            
-            var angleConfig = AngleSharp.Configuration.Default;
-            angleContext = BrowsingContext.New(angleConfig);
-            globalDom = angleContext.OpenAsync(r => r.Content(fileContent))
-                .GetAwaiter().GetResult();
-        }
+        LoadGlobalPageCacheAsync(config, CancellationToken.None).GetAwaiter().GetResult();
         
         {
             var p = Console.GetCursorPosition();
@@ -32,38 +32,7 @@ public class Baker
                 Console.SetCursorPosition(p.Left, p.Top);
                 Console.Write(new string(' ', Console.WindowWidth) + "\r");
                 Console.WriteLine($"Compiling generic pages [{done}/{total}]");
-
-                var domRoot = globalDom.DocumentElement.Clone();
-                var newDoc = angleContext.OpenNewAsync().GetAwaiter().GetResult();
-                newDoc.ReplaceChild(domRoot, newDoc.DocumentElement);
-
-                var pageDoc = angleContext
-                    .OpenAsync(r => r.Content(File.ReadAllText(source)))
-                    .GetAwaiter().GetResult();
-
-                IElement pageBody;
-                if (pageDoc.Body!.Children.Length > 1)
-                {
-                    pageBody = pageDoc.CreateElement("div");
-                    foreach (var i in pageDoc.Body.Children)
-                    {
-                        i.Parent!.RemoveChild(i);
-                        pageBody.AppendChild(i);
-                    }
-                }
-                else pageBody = pageDoc.Body;
-                
-                var contentTags = newDoc.QuerySelectorAll("content");
-                foreach (var i in contentTags)
-                    i.Parent!.ReplaceChild(pageBody, i);
-
-                var filePath = Path.Combine(
-                    Api.CacheDirectory.FullName,
-                    $"{route.TrimStart(Path.DirectorySeparatorChar).Replace('/', '.')}.index.g.html");
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-                File.WriteAllText(filePath, newDoc.ToHtml());
-                
-                CompileGenericPageAsync(source, route, CancellationToken.None).Wait();
+                CompileGenericPageAsync(source, route, CancellationToken.None).GetAwaiter().GetResult();
                 done++;
             }
             
@@ -102,13 +71,127 @@ public class Baker
         }
     }
 
+
+    private async Task LoadGlobalPageCacheAsync(Configuration config, CancellationToken cancellationToken)
+    {
+        if (config.Global == null) throw new NotImplementedException();
+            
+        if (!Directory.Exists(config.Global))
+            throw new FileNotFoundException($"Provided global page's directory '{config.Global}' does not exist.");
+            
+        if (!File.Exists(Path.Combine(config.Global, "index.html")))
+            throw new FileNotFoundException(
+                $"Provided global page's DOM file '{config.Global}/index.html' does not exist.\n" +
+                $"Make sure that the file name is correct!");
+
+        var (dom, styles, scripts) = EnumerateSourceFiles(config, config.Global);
+        
+       _globalDom = await _angleContext.OpenAsync(r => r.Content(File.ReadAllText(dom)), cancellationToken);
+       _globalStyles = styles.Select(CreateSimpleRoute).ToArray();
+       _globalScripts = scripts.Select(CreateSimpleRoute).ToArray();
+       
+    }
+
     public async Task CompileGenericPageAsync(string source, string route, CancellationToken cancellationToken)
     {
+        var (domPath, styles, scripts) = EnumerateSourceFiles(Api.Configuration, source);
         
+        var domRoot = _globalDom!.DocumentElement.Clone();
+        var newDoc = _angleContext.OpenNewAsync(null, cancellationToken).GetAwaiter().GetResult();
+        newDoc.ReplaceChild(domRoot, newDoc.DocumentElement);
+
+        var pageDoc = await _angleContext.OpenAsync(r
+            => r.Content(File.ReadAllText(domPath)), cancellationToken);
+        var pageStyles = styles.Select(CreateSimpleRoute).ToArray();
+        var pageScripts = scripts.Select(CreateSimpleRoute).ToArray();
+        
+        { // preprocessor
+
+            // appending stylesheets
+            var headTag = newDoc.QuerySelector("head");
+            if (headTag != null)
+            {
+                // Appending stylesheets
+                foreach (var i in (IEnumerable<string>)[.. _globalStyles, .. pageStyles])
+                {
+                    var l = newDoc.CreateElement("link");
+                    l.SetAttribute("rel", "stylesheet");
+                    l.SetAttribute("href", i);
+                    headTag.AppendChild(l);
+                }
+                
+                // Appending scripts
+                foreach (var i in (IEnumerable<string>)[.. _globalScripts, .. pageScripts])
+                {
+                    var l = newDoc.CreateElement("script");
+                    l.SetAttribute("src", i);
+                    l.SetAttribute("defer", "");
+                    headTag.AppendChild(l);
+                }
+            }
+
+            // replacing content
+            var contentTags = newDoc.QuerySelectorAll("content");
+            foreach (var placeholder in contentTags)
+            {
+                var frag = newDoc.CreateDocumentFragment();
+                foreach (var child in pageDoc.Body.Children.ToArray())
+                {
+                    child.Remove();
+                    frag.AppendChild(child);
+                }
+                placeholder.Replace(frag);
+            }
+        }
+
+        var filePath = Path.Combine(
+            Api.CacheDirectory.FullName,
+            $"{route.TrimStart(Path.DirectorySeparatorChar).Replace('/', '.')}.index.g.html");
+        
+        CreateDomRoute(newDoc, domPath, route);
     }
     public async Task CompileMarkdownPageAsync(Section section, string source, CancellationToken cancellationToken)
     {
         
     }
-    
+
+    private (string dom, string[] styles, string[] scripts) EnumerateSourceFiles(Configuration config, string path)
+    {
+        var domFiles = Directory.EnumerateFiles(path, config.FileQuery.Dom!).ToArray();
+        var styleFiles = Directory.EnumerateFiles(path, config.FileQuery.Style!);
+        var scriptFiles = Directory.EnumerateFiles(path, config.FileQuery.Script!);
+
+        return domFiles.Length switch
+        {
+            0 => throw new Exception($"Expected file matching '{Path.Combine(path, config.FileQuery.Dom!)}' but no file found"),
+            > 1 => throw new Exception($"More than one files matching '{Path.Combine(path, config.FileQuery.Dom!)}'!"),
+            _ => (domFiles[0], styleFiles.ToArray(), scriptFiles.ToArray())
+        };
+    }
+
+    private string CreateDomRoute(IDocument dom, string pathSrc, string route)
+    {
+        var fileName = (Path.IsPathRooted(pathSrc) ? pathSrc : pathSrc[2..])
+            .Replace(Path.DirectorySeparatorChar, '.')
+            .Replace(Path.AltDirectorySeparatorChar, '.');
+        fileName = Path.Combine(Api.CacheDirectory.FullName, fileName);
+        
+        File.WriteAllText(fileName, dom.ToHtml());
+        Api.Router.RegisterPage(route, fileName);
+        return route;
+    }
+    private string CreateSimpleRoute(string pathSrc)
+    {
+        var rawRoute = (Path.IsPathRooted(pathSrc) ? pathSrc : pathSrc[2..]);
+        
+        var simpleRoute = rawRoute
+            .Replace(Path.DirectorySeparatorChar, '.')
+            .Replace(Path.AltDirectorySeparatorChar, '.');
+        var destiny = Path.Combine(Api.CacheDirectory.FullName, simpleRoute);
+        
+        
+        File.Copy(pathSrc, destiny, true);
+        Api.Router.RegisterPage(rawRoute, destiny);
+        return rawRoute;
+    }
 }
