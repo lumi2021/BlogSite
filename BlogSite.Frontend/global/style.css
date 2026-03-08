@@ -1,15 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
 html {
     
-    --background-primary-color: #282A36;
-    --background-secondary-color: #44475A;
+    --background-primary-color-1: #282A36;
+    --background-primary-color-2: #1a1a26;
+    --background-secondary-color-1: #44475A;
+    --background-secondary-color-2: #25253d;
+    
     --text-primary-color: #F8F8F2;
     
+    --tiny-padding: 0.5em;
+    --medium-padding: 1em;
+    --large-padding: 2em;
+    
+    --normal-font-family: "Open Sans", sans-serif;
+    --code-font-family: "Roboto Mono", monospace;
 }
 
 body {
     margin: 0;
-    background-color: var(--background-primary-color);
+    background-color: var(--background-primary-color-1);
     color: var(--text-primary-color);
+    font-family: var(--normal-font-family), sans-serif;
     height: 100vh;
     width: 100vw;
     display: grid;
@@ -19,11 +31,30 @@ body {
 header {
     position: relative;
     top: 0;
-    background-color: var(--background-secondary-color);
+    background-color: var(--background-secondary-color-1);
+    display: flex;
+}
+header > a {
+    color: var(--text-primary-color);
+    font-weight: bold;
+    padding: var(--medium-padding);
+    text-decoration: none;
+}
+header > a:hover {
+    background-color: var(--background-secondary-color-2);
+}
+
+main {
+    margin: var(--medium-padding);
 }
 
 footer {
     position: relative;
     bottom: 0;
-    background-color: var(--background-secondary-color);
+    background-color: var(--background-secondary-color-1);
+    text-align: center;
+    padding: var(--medium-padding);
+}
+footer > a {
+    color: var(--text-primary-color);
 }
