@@ -1,6 +1,29 @@
+html {
+    
+    --background-primary-color: #282A36;
+    --background-secondary-color: #44475A;
+    --text-primary-color: #F8F8F2;
+    
+}
+
 body {
-    
-    background-color: black;
-    color: white;
-    
+    margin: 0;
+    background-color: var(--background-primary-color);
+    color: var(--text-primary-color);
+    height: 100vh;
+    width: 100vw;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+}
+
+header {
+    position: relative;
+    top: 0;
+    background-color: var(--background-secondary-color);
+}
+
+footer {
+    position: relative;
+    bottom: 0;
+    background-color: var(--background-secondary-color);
 }
