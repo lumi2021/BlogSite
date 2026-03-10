@@ -13,21 +13,5 @@
         <PackageReference Include="Markdig" Version="1.1.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3"/>
     </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\BlogSite.Frontend\BlogSite.Frontend.csproj" />
-    </ItemGroup>
-
-    <Target Name="MoveBinaries" AfterTargets="Publish">
-        <ItemGroup>
-            <Binaries Include="$(OutputPath)*.dll;$(OutputPath)*.pdb" />
-        </ItemGroup>
-
-        <MakeDir Directories="$(OutputPath)lib" />
-
-        <Move
-                SourceFiles="@(Binaries)"
-                DestinationFolder="$(OutputPath)lib" />
-    </Target>
-
+    
 </Project>

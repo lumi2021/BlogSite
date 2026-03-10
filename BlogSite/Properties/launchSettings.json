@@ -1,13 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "http": {
+    "debug": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "",
       "applicationUrl": "http://localhost:5148",
-      "workingDirectory": "./bin/Debug/net10.0",
+      "workingDirectory": "../BlogSite.Frontend",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

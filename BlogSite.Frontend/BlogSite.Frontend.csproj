@@ -1,24 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <Content Include="**\*"
-                 Exclude="bin\**;obj\**;*.csproj"
-                 CopyToOutputDirectory="PreserveNewest" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="blog\" />
-      <Folder Include="docs\" />
-    </ItemGroup>
-
-    <Target Name="CreateDirectories" AfterTargets="Build">
-        <MakeDir Directories="$(OutDir)blog" />
-        <MakeDir Directories="$(OutDir)docs" />
-    </Target>
-
+﻿<Project>
+  <ItemGroup>
+    <File Include="**\*" />
+  </ItemGroup>
 </Project>

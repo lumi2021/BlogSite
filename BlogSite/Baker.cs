@@ -87,8 +87,8 @@ public class Baker
         var (dom, styles, scripts) = EnumerateSourceFiles(config, config.Global);
         
        _globalDom = await _angleContext.OpenAsync(r => r.Content(File.ReadAllText(dom)), cancellationToken);
-       _globalStyles = styles.Select(CreateSimpleRoute).ToArray();
-       _globalScripts = scripts.Select(CreateSimpleRoute).ToArray();
+       _globalStyles = styles.Select(e => CreateSimpleRoute(e, "text/css")).ToArray();
+       _globalScripts = scripts.Select(e => CreateSimpleRoute(e, "text/js")).ToArray();
        
     }
 
@@ -102,8 +102,8 @@ public class Baker
 
         var pageDoc = await _angleContext.OpenAsync(r
             => r.Content(File.ReadAllText(domPath)), cancellationToken);
-        var pageStyles = styles.Select(CreateSimpleRoute).ToArray();
-        var pageScripts = scripts.Select(CreateSimpleRoute).ToArray();
+        var pageStyles = styles.Select(e => CreateSimpleRoute(e, "text/css")).ToArray();
+        var pageScripts = scripts.Select(e => CreateSimpleRoute(e, "text/js")).ToArray();
         
         { // preprocessor
 
@@ -169,7 +169,7 @@ public class Baker
         };
     }
 
-    private string CreateDomRoute(IDocument dom, string pathSrc, string route)
+    private void CreateDomRoute(IDocument dom, string pathSrc, string route)
     {
         var fileName = (Path.IsPathRooted(pathSrc) ? pathSrc : pathSrc[2..])
             .Replace(Path.DirectorySeparatorChar, '.')
@@ -177,21 +177,12 @@ public class Baker
         fileName = Path.Combine(Api.CacheDirectory.FullName, fileName);
         
         File.WriteAllText(fileName, dom.ToHtml());
-        Api.Router.RegisterPage(route, fileName);
-        return route;
+        Api.Router.RegisterPage(route, new Router.StaticFileResult(fileName, "text/html"));
     }
-    private string CreateSimpleRoute(string pathSrc)
+    private string CreateSimpleRoute(string pathSrc, string mimeType)
     {
         var rawRoute = (Path.IsPathRooted(pathSrc) ? pathSrc : pathSrc[2..]);
-        
-        var simpleRoute = rawRoute
-            .Replace(Path.DirectorySeparatorChar, '.')
-            .Replace(Path.AltDirectorySeparatorChar, '.');
-        var destiny = Path.Combine(Api.CacheDirectory.FullName, simpleRoute);
-        
-        
-        File.Copy(pathSrc, destiny, true);
-        Api.Router.RegisterPage(rawRoute, destiny);
+        Api.Router.RegisterPage(rawRoute, new Router.StaticFileResult(pathSrc, mimeType));
         return rawRoute;
     }
 }
