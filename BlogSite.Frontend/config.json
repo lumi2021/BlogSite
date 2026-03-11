@@ -15,5 +15,6 @@
 		}
 	},
 
-	"global": "./global"
+	"global": "./global",
+	"components": "./components"
 }

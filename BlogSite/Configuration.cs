@@ -11,9 +11,9 @@ public class Configuration
     [JsonPropertyName("file-query")]
     public FileQuery FileQuery { get; set; } = new FileQuery
     {
-        Dom = "index.html",
-        Style = "style.css",
-        Script = "script.js"
+        Dom = "*.html",
+        Style = "*.css",
+        Script = "*.js"
     };
     
     [JsonPropertyName("generic-routes")]
@@ -24,6 +24,8 @@ public class Configuration
     
     [JsonPropertyName("global")]
     public string? Global { get; set; }
+    [JsonPropertyName("components")]
+    public string? Components { get; set; }
 }
 
 public record FileQuery

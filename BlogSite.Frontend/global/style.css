@@ -55,6 +55,13 @@ footer {
     text-align: center;
     padding: var(--medium-padding);
 }
-footer > a {
+footer > a,
+footer > a > span {
     color: var(--text-primary-color);
+}
+
+p.center,
+h1.center, h2.center, h3.center, h4.center, h5.center, h6.center
+{
+    text-align: center;
 }

@@ -2,4 +2,7 @@
   <ItemGroup>
     <File Include="**\*" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="components\" />
+  </ItemGroup>
 </Project>
