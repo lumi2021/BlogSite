@@ -3,6 +3,6 @@
     <File Include="**\*" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="components\" />
+    <Folder Include="components" />
   </ItemGroup>
 </Project>

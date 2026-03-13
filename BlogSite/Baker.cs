@@ -71,7 +71,6 @@ public class Baker
         }
     }
 
-
     private async Task LoadGlobalPageCacheAsync(Configuration config, CancellationToken cancellationToken)
     {
         if (config.Global == null) throw new NotImplementedException();

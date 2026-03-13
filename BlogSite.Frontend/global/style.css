@@ -1,11 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
-html {
+:root {
     
     --background-primary-color-1: #282A36;
     --background-primary-color-2: #1a1a26;
     --background-secondary-color-1: #44475A;
     --background-secondary-color-2: #25253d;
+    
+    --color-red: #FF5555;
+    --color-orange: #FFB86C;
+    --color-yellow: #F1FA8C;
+    --color-green: #50FA7B;
+    --color-cyan: #8BE9FD;
+    --color-purple: #BD93F9;
+    --color-pink: #FF79C6;
     
     --text-primary-color: #F8F8F2;
     
@@ -13,7 +21,16 @@ html {
     --medium-padding: 1em;
     --large-padding: 2em;
     
-    --normal-font-family: "Open Sans", sans-serif;
+    --corner-rounding-none: 0;
+    --corner-rounding-xs: 4mm;
+    --corner-rounding-s: 8mm;
+    --corner-rounding-m: 12mm;
+    --corner-rounding-l: 16mm;
+    --corner-rounding-xl: 28mm;
+    --corner-rounding-xxl: 48mm;
+    --corner-rounding-full: 100%;
+    
+    --normal-font-family: "Roboto";
     --code-font-family: "Roboto Mono", monospace;
 }
 
@@ -32,16 +49,6 @@ header {
     position: relative;
     top: 0;
     background-color: var(--background-secondary-color-1);
-    display: flex;
-}
-header > a {
-    color: var(--text-primary-color);
-    font-weight: bold;
-    padding: var(--medium-padding);
-    text-decoration: none;
-}
-header > a:hover {
-    background-color: var(--background-secondary-color-2);
 }
 
 main {
@@ -52,16 +59,96 @@ footer {
     position: relative;
     bottom: 0;
     background-color: var(--background-secondary-color-1);
+}
+footer > .footer-copyright {
     text-align: center;
     padding: var(--medium-padding);
 }
-footer > a,
-footer > a > span {
+
+p, h1, h2, h3, h4, h5, h6, span, a {
     color: var(--text-primary-color);
+    &.bold { font-weight: bold; }
+    &.center { text-align: center; }
 }
 
-p.center,
-h1.center, h2.center, h3.center, h4.center, h5.center, h6.center
-{
-    text-align: center;
+.corner-rounding-none { border-radius: var(--corner-rounding-none); }
+.corner-rounding-xs { border-radius: var(--corner-rounding-xs); }
+.corner-rounding-s { border-radius: var(--corner-rounding-s); }
+.corner-rounding-m { border-radius: var(--corner-rounding-m); }
+.corner-rounding-l { border-radius: var(--corner-rounding-l); }
+.corner-rounding-xl { border-radius: var(--corner-rounding-xl); }
+.corner-rounding-xxl { border-radius: var(--corner-rounding-xxl); }
+.corner-rounding-full { border-radius: var(--corner-rounding-full); }
+
+:not(nav) a {
+    color: var(--color-yellow);
+    background-color: unset;
 }
+nav a {
+    color: var(--text-primary-color);
+    font-weight: bold;
+    padding: var(--medium-padding);
+    text-decoration: none;
+
+    &:hover { background-color: var(--background-secondary-color-2); }
+}
+
+button,
+a.button {
+    color: var(--background-primary-color-1);
+    text-decoration: none;
+    font-weight: bold;
+    background-color: var(--color-cyan);
+    border: none;
+    border-radius: var(--corner-rounding-xs);
+    padding: var(--tiny-padding) var(--large-padding) var(--tiny-padding) var(--large-padding);
+    font-family: var(--normal-font-family), sans-serif;
+    
+    &.warn { background-color: var(--color-yellow); }
+    &.danger { background-color: var(--color-red); }
+    
+    &:hover {
+        filter: brightness(0.8);
+        cursor: pointer;
+    }
+    &:active {
+        filter: brightness(0.5);
+    }
+}
+
+.container {
+    margin: var(--medium-padding) var(--large-padding) var(--medium-padding) var(--large-padding);
+}
+
+nav {
+    display: flex;
+    --max-cols: 16;
+}
+nav > * {
+    --cols: 1;
+
+    width: calc(100% * var(--cols) / var(--max-cols, 12));
+    display: flex;
+    align-content: center;
+
+
+    &.col-1 { --cols: 1; }
+    &.col-2 { --cols: 2; }
+    &.col-3 { --cols: 3; }
+    &.col-4 { --cols: 4; }
+    &.col-5 { --cols: 5; }
+    &.col-6 { --cols: 6; }
+    &.col-7 { --cols: 7; }
+    &.col-8 { --cols: 8; }
+    &.col-9 { --cols: 9; }
+    &.col-10 { --cols: 10; }
+    &.col-11 { --cols: 11; }
+    &.col-12 { --cols: 12; }
+    &.col-13 { --cols: 13; }
+    &.col-14 { --cols: 14; }
+    &.col-15 { --cols: 15; }
+    &.col-16 { --cols: 16; }
+}
+@media (max-width: 1600px) { nav { --max-cols: 12; } }
+@media (max-width: 1200px) { nav { --max-cols: 9; } }
+@media (max-width: 900px) { nav { --max-cols: 5; } }

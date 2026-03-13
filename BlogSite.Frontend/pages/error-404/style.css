@@ -1,0 +1,75 @@
+@import 'https://fonts.googleapis.com/css?family=VT323';
+
+body { background: #0414a7; }
+
+.bsod {
+
+    --light-grey: #e0e2f4;
+    --grey: #aaaaaa;
+    --blue: #0414a7;
+    --font-size: 30px;
+    --font-family: 'VT323', monospace;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    
+    p, a {
+        font: normal var(--font-size)/1.25rem var(--font-family);
+        margin: 16px 0 16px 0;
+    }
+
+    h1 {
+        font: normal 2.75rem/1.05em var(--font-family);
+    }
+
+    h2 {
+        font: normal 2.25rem/1.25em var(--font-family);
+    }
+
+    h3 {
+        font: lighter 1.5rem/1.25em var(--font-family);
+    }
+
+    h4 {
+        font: lighter 1.125rem/1.2222222em var(--font-family);
+    }
+
+    h1, h2, h3, h4, p, a {
+        color: var(--light-grey);
+        background-color: transparent;
+
+        &.neg, .neg {
+            color: var(--blue);
+            background-color: var(--light-grey);
+        }
+    }
+    
+    .bg {
+        background: var(--light-grey);
+        padding: 0 15px 2px 13px;
+    }
+
+    .text {
+        text-align: left;
+        width: 50%;
+    }
+
+    .title {
+        padding: 0 2ch 0 2ch;
+    }
+    
+    .blink {
+        animation: blink 1s infinite;
+    }
+}
+
+@keyframes blink {
+    0%, 50% { color: inherit; }
+    50.01%, 100% { color: transparent; }
+}

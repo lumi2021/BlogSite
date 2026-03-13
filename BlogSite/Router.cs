@@ -1,6 +1,3 @@
-using System.Buffers;
-using Microsoft.Extensions.FileProviders;
-
 namespace BlogSite;
 
 public partial class Router
@@ -34,6 +31,7 @@ public partial class Router
             default: _routesMap[url] = result; break;
         }
     }
+    public void InvalidateAll() => _routesMap.Clear();
     
     private async Task NotFoundResponse(HttpContext context, CancellationToken cancellationToken)
     {
