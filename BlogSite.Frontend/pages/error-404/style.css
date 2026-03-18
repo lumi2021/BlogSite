@@ -67,6 +67,11 @@ body { background: #0414a7; }
     .blink {
         animation: blink 1s infinite;
     }
+    
+    .back-link:hover {
+        color: var(--blue);
+        background-color: var(--light-grey);
+    }
 }
 
 @keyframes blink {

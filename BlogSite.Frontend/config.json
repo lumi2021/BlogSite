@@ -1,6 +1,10 @@
 {
 	"use-system-tmp": false,
 	"page-host-url": "http://localhost:5148/",
+
+	"global-variables": {
+		"toolName" : "BlogSite"
+	},
 	
 	"generic-routes": {
 		"/": "./pages/main",

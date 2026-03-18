@@ -3,7 +3,7 @@
 :root {
     /*
         https://maketintsandshades.com/ for shades
-        https://coolors.co/ for color names
+        https://coolors.co/ for color names (only base color)
     */
     --color-shadow-grey-00: #282a36;
     --color-shadow-grey-10: #242631;
@@ -121,7 +121,6 @@ footer {
 }
 
 p, h1, h2, h3, h4, h5, h6, span, a {
-    color: var(--foreground-color);
     &.bold { font-weight: bold; }
     &.center { text-align: center; }
 }
@@ -140,6 +139,7 @@ nav > a:not(button) {
     font-weight: bold;
     padding: var(--medium-padding);
     text-decoration: none;
+    color: var(--foreground-color);
 
     &:hover { background-color: var(--color-shadow-grey-10); }
 }
@@ -204,8 +204,7 @@ nav > * {
     width: calc(100% * var(--cols) / var(--max-cols, 12));
     display: flex;
     align-content: center;
-
-
+    
     &.col-1 { --cols: 1; }
     &.col-2 { --cols: 2; }
     &.col-3 { --cols: 3; }
@@ -226,3 +225,9 @@ nav > * {
 @media (max-width: 1600px) { nav { --max-cols: 12; } }
 @media (max-width: 1200px) { nav { --max-cols: 9; } }
 @media (max-width: 900px) { nav { --max-cols: 5; } }
+
+span.____fmterr____ {
+    text-decoration: underline !important;
+    text-decoration-color: red !important;
+    cursor: not-allowed !important;
+}

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using BlogSite.Assets;
 
@@ -50,7 +49,9 @@ public partial class Router
         {
             case DynamicPage dynamicPage:
                 context.Response.ContentType = "text/html";
-                var pageContent = await Api.Baker.BakeDynamicPageAsync(dynamicPage, cancellationToken);
+                var pageContent = await Api.Baker.BakeDynamicPageAsync(
+                    context.Request.Host + context.Request.Path,
+                    dynamicPage, cancellationToken);
                 await context.Response.WriteAsync(pageContent, new UTF8Encoding(), cancellationToken);
                 return;
             

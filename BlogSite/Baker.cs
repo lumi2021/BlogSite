@@ -58,15 +58,16 @@ public partial class Baker
             }
 
             var body = document.Body ?? (IHtmlElement)html.AppendChild(document.CreateElement("body"));
-            HtmlPreprocessor.AnalyzeElement(globalTemplateDom, body);
 
             body.InnerHtml = string.Empty;
             if (globalTemplateDom.Body != null)
+            {
                 foreach (var node in globalTemplateDom.Body.ChildNodes)
                 {
                     var imported = document.Import(node);
                     document.Body!.AppendChild(imported);
                 }
+            }
         }
         catch (Exception e)
         {
@@ -76,14 +77,15 @@ public partial class Baker
         finally { _globalLoaded.SetResult(); }
     }
     
-    public async Task<string> BakeDynamicPageAsync(DynamicPage page, CancellationToken cancellationToken)
+    public async Task<string> BakeDynamicPageAsync(string url, DynamicPage page, CancellationToken cancellationToken)
     {
         await _globalLoaded.Task;
         
         var doc = await File.ReadAllTextAsync(page.DomPath, cancellationToken);
         var pageTemplate = await _angleContext.OpenAsync(req => req.Content(doc), cancellationToken);
         
-        var result = await HtmlPreprocessor.BakePageTemplates(_globalTemplateAsset, _globalTemplateDom, page, pageTemplate, cancellationToken);
+        var result = await HtmlPreprocessor.BakePageTemplates(url,
+            _globalTemplateAsset, _globalTemplateDom, page, pageTemplate, cancellationToken);
         return result.ToHtml(new PrettyMarkupFormatter());
     }
 }
