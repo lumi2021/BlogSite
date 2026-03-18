@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http.Connections;
-
 namespace BlogSite;
 
 #if DEBUG
@@ -31,12 +29,12 @@ public static class PwdWatcher
         if (e.FullPath == Api.ConfigurationPath)
         {
             Api.LoadConfiguration();
-            Api.Router.InvalidateAll();
-            Api.Baker.CompileAllPages();
+            //Api.Router.InvalidateAll();
+            //Api.Baker.CompileAllPages();
         }
         
-        Api.Router.InvalidateAll();
-        Api.Baker.CompileAllPages();
+        //Api.Router.InvalidateAll();
+        //Api.Baker.CompileAllPages();
     }
     private static void OnRenamed(object sender, RenamedEventArgs e)
     {

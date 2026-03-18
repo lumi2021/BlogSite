@@ -21,6 +21,6 @@ app.Use(async (context, next) =>
 #if DEBUG
 PwdWatcher.Init();
 #endif
-Api.Baker.CompileAllPages();
+Api.Assets.LoadAllAssets();
 
 app.Run();

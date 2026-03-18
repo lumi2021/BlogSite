@@ -1,9 +1,13 @@
+using System.Diagnostics;
+using System.Text;
+using BlogSite.Assets;
+
 namespace BlogSite;
 
 public partial class Router
 {
-    private readonly Dictionary<string, RouterResult> _routesMap = new();
-    private RouterResult? _notFoundPage;
+    private readonly Dictionary<string, Asset> _routesMap = new();
+    private Asset? _notFoundPage;
     
     public async Task Route(HttpContext context, CancellationToken cancellationToken)
     {
@@ -16,8 +20,9 @@ public partial class Router
         else await NotFoundResponse(context, cancellationToken);
     }
 
-    public void RegisterPage(string url, RouterResult result)
+    public void RegisterAsset(Asset asset)
     {
+        var url = asset.Route;
         switch (url[0])
         {
             case '@':
@@ -27,8 +32,8 @@ public partial class Router
         
         switch (url)
         {
-            case "@404": _notFoundPage = result; break;
-            default: _routesMap[url] = result; break;
+            case "@404": _notFoundPage = asset; break;
+            default: _routesMap[url] = asset; break;
         }
     }
     public void InvalidateAll() => _routesMap.Clear();
@@ -39,13 +44,25 @@ public partial class Router
         if (_notFoundPage != null) await SolveRouterResult(_notFoundPage, context, cancellationToken);
     }
 
-    private async Task SolveRouterResult(RouterResult result, HttpContext context, CancellationToken cancellationToken)
+    private async Task SolveRouterResult(Asset result, HttpContext context, CancellationToken cancellationToken)
     {
         switch (result)
         {
-            case StaticFileResult staticFileResult:
-                context.Response.ContentType = staticFileResult.MimeType;
-                await context.Response.SendFileAsync(staticFileResult.FilePath, cancellationToken);
+            case DynamicPage dynamicPage:
+                context.Response.ContentType = "text/html";
+                var pageContent = await Api.Baker.BakeDynamicPageAsync(dynamicPage, cancellationToken);
+                await context.Response.WriteAsync(pageContent, new UTF8Encoding(), cancellationToken);
+                return;
+            
+            case StaticFile staticFile:
+                context.Response.ContentType = Path.GetExtension(staticFile.FilePath) switch
+                {
+                    ".html" => "text/html",
+                    ".css" => "text/css",
+                    ".js" => "text/javascript",
+                    _ => "text/plain"
+                };
+                await context.Response.SendFileAsync(staticFile.FilePath, cancellationToken);
                 return;
                 
             default: throw new NotImplementedException();

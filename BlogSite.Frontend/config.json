@@ -1,5 +1,6 @@
 {
 	"use-system-tmp": false,
+	"page-host-url": "http://localhost:5148/",
 	
 	"generic-routes": {
 		"/": "./pages/main",

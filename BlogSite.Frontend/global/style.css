@@ -1,43 +1,95 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
+    /*
+        https://maketintsandshades.com/ for shades
+        https://coolors.co/ for color names
+    */
+    --color-shadow-grey-00: #282a36;
+    --color-shadow-grey-10: #242631;
+    --color-shadow-grey-20: #20222b;
+    --color-shadow-grey-30: #1c1d26;
+    --color-shadow-grey-40: #181920;
+    --color-shadow-grey-50: #14151b;
+    --color-shadow-grey-60: #101116;
+    --color-shadow-grey-70: #0c0d10;
+    --color-shadow-grey-80: #08080b;
+    --color-shadow-grey-90: #040405;
     
-    --background-primary-color-1: #282A36;
-    --background-primary-color-2: #1a1a26;
-    --background-secondary-color-1: #44475A;
-    --background-secondary-color-2: #25253d;
+    --color-charcoal-blue-00: #44475a;
+    --color-charcoal-blue-10: #3d4051;
+    --color-charcoal-blue-20: #363948;
+    --color-charcoal-blue-30: #30323f;
+    --color-charcoal-blue-40: #292b36;
+    --color-charcoal-blue-50: #22242d;
+    --color-charcoal-blue-60: #1b1c24;
+    --color-charcoal-blue-70: #14151b;
+    --color-charcoal-blue-80: #0e0e12;
+    --color-charcoal-blue-90: #070709;
+
+    --color-glaucous-00: #6272a4;
+    --color-glaucous-10: #586794;
+    --color-glaucous-20: #4e5b83;
+    --color-glaucous-30: #455073;
+    --color-glaucous-40: #3b4462;
+    --color-glaucous-50: #313952;
+    --color-glaucous-60: #272e42;
+    --color-glaucous-70: #1d2231;
+    --color-glaucous-80: #141721;
+    --color-glaucous-90: #0a0b10;
     
-    --color-red: #FF5555;
-    --color-orange: #FFB86C;
-    --color-yellow: #F1FA8C;
-    --color-green: #50FA7B;
-    --color-cyan: #8BE9FD;
-    --color-purple: #BD93F9;
-    --color-pink: #FF79C6;
+    --color-porcelain-00: #f8f8f2;
+    --color-porcelain-10: #dfdfda;
+    --color-porcelain-20: #c6c6c2;
+    --color-porcelain-30: #aeaea9;
+    --color-porcelain-40: #959591;
+    --color-porcelain-50: #7c7c79;
+    --color-porcelain-60: #636361;
+    --color-porcelain-70: #4a4a49;
+    --color-porcelain-80: #323230;
+    --color-porcelain-90: #191918;
     
-    --text-primary-color: #F8F8F2;
+    --contrast-color-red: #FF5555;
+    --contrast-color-orange: #FFB86C;
+    --contrast-color-yellow: #F1FA8C;
+    --contrast-color-green: #50FA7B;
+    --contrast-color-cyan: #8BE9FD;
+    --contrast-color-purple: #BD93F9;
+    --contrast-color-pink: #FF79C6;
     
     --tiny-padding: 0.5em;
     --medium-padding: 1em;
     --large-padding: 2em;
     
     --corner-rounding-none: 0;
-    --corner-rounding-xs: 4mm;
-    --corner-rounding-s: 8mm;
-    --corner-rounding-m: 12mm;
-    --corner-rounding-l: 16mm;
-    --corner-rounding-xl: 28mm;
-    --corner-rounding-xxl: 48mm;
+    --corner-rounding-xs:   2mm;
+    --corner-rounding-s:    4mm;
+    --corner-rounding-m:    8mm;
+    --corner-rounding-l:    12mm;
+    --corner-rounding-xl:   14mm;
+    --corner-rounding-xxl:  16mm;
     --corner-rounding-full: 100%;
+    
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --shadow-blur: 10px;
+    --shadow-depth-none: none;
+    --shadow-depth-s:    1mm 1mm var(--shadow-blur) var(--shadow-color);
+    --shadow-depth-m:    2mm 2mm var(--shadow-blur) var(--shadow-color);
+    --shadow-depth-l:    3mm 3mm var(--shadow-blur) var(--shadow-color);
     
     --normal-font-family: "Roboto";
     --code-font-family: "Roboto Mono", monospace;
+
+    /* default values */
+    --foreground-color: var(--color-porcelain-00);
+    --background-color: var(--color-shadow-grey-00);
+    --corner-rounding: var(--corner-rounding-m);
 }
 
 body {
     margin: 0;
-    background-color: var(--background-primary-color-1);
-    color: var(--text-primary-color);
+    background-color: var(--background-color);
+    color: var(--foreground-color);
     font-family: var(--normal-font-family), sans-serif;
     height: 100vh;
     width: 100vw;
@@ -48,7 +100,8 @@ body {
 header {
     position: relative;
     top: 0;
-    background-color: var(--background-secondary-color-1);
+    --background-color: var(--color-shadow-grey-20);
+    background-color: var(--background-color);
 }
 
 main {
@@ -58,15 +111,17 @@ main {
 footer {
     position: relative;
     bottom: 0;
-    background-color: var(--background-secondary-color-1);
-}
-footer > .footer-copyright {
-    text-align: center;
-    padding: var(--medium-padding);
+    --background-color: var(--color-shadow-grey-20);
+    background-color: var(--background-color);
+    
+    & > .footer-copyright {
+        text-align: center;
+        padding: var(--medium-padding);
+    }
 }
 
 p, h1, h2, h3, h4, h5, h6, span, a {
-    color: var(--text-primary-color);
+    color: var(--foreground-color);
     &.bold { font-weight: bold; }
     &.center { text-align: center; }
 }
@@ -80,39 +135,58 @@ p, h1, h2, h3, h4, h5, h6, span, a {
 .corner-rounding-xxl { border-radius: var(--corner-rounding-xxl); }
 .corner-rounding-full { border-radius: var(--corner-rounding-full); }
 
-:not(nav) a {
-    color: var(--color-yellow);
-    background-color: unset;
-}
-nav a {
-    color: var(--text-primary-color);
+a:not(nav > a) { --foreground-color: var(--contrast-color-cyan); }
+nav > a:not(button) {
     font-weight: bold;
     padding: var(--medium-padding);
     text-decoration: none;
 
-    &:hover { background-color: var(--background-secondary-color-2); }
+    &:hover { background-color: var(--color-shadow-grey-10); }
 }
 
 button,
 a.button {
-    color: var(--background-primary-color-1);
+    --foreground-color: var(--contrast-color-cyan);
+    &.warn { --foreground-color: var(--contrast-color-yellow); }
+    &.danger { --foreground-color: var(--contrast-color-red); }
+    
+    --button-fill-color: var(--foreground-color);
+    --button-text-color: var(--background-color);
+    border: none;
+    
+    &.outline {
+        --button-fill-color: var(--background-color);
+        --button-text-color: var(--foreground-color);
+        border: 0.1mm solid var(--foreground-color);
+    }
+    
+    display: block;
+    width: fit-content;
     text-decoration: none;
     font-weight: bold;
-    background-color: var(--color-cyan);
-    border: none;
     border-radius: var(--corner-rounding-xs);
     padding: var(--tiny-padding) var(--large-padding) var(--tiny-padding) var(--large-padding);
     font-family: var(--normal-font-family), sans-serif;
+    box-shadow: var(--shadow-depth-m);
+    user-select: none;
+    -webkit-user-drag: none;
     
-    &.warn { background-color: var(--color-yellow); }
-    &.danger { background-color: var(--color-red); }
+    color: var(--button-text-color);
+    background-color: var(--button-fill-color);
+    
+    &.shadow-depth-none { box-shadow: var(--shadow-depth-none); }
+    &.shadow-depth-s { box-shadow: var(--shadow-depth-s); }
+    &.shadow-depth-m { box-shadow: var(--shadow-depth-m); }
+    &.shadow-depth-l { box-shadow: var(--shadow-depth-l); }
     
     &:hover {
         filter: brightness(0.8);
         cursor: pointer;
     }
-    &:active {
-        filter: brightness(0.5);
+    &:active {filter: brightness(0.5);}
+    &.center {
+        margin-left: auto;
+        margin-right: auto;
     }
 }
 

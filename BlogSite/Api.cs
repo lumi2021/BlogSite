@@ -9,6 +9,8 @@ public static class Api
         
     public static Router Router { get; private set; }  = null!;
     public static Baker Baker { get; private set; } = null!;
+    public static AssetsManager Assets { get; private set; } = null!;
+    
     public static DirectoryInfo CacheDirectory => _cacheDir ?? throw new InvalidOperationException();
     public static Configuration Configuration => _config ?? throw new InvalidOperationException();
     public static string ConfigurationPath => Path.GetFullPath("./config.json");
@@ -38,5 +40,6 @@ public static class Api
 
         Router = new Router();
         Baker = new Baker();
+        Assets = new AssetsManager();
     }
 }
