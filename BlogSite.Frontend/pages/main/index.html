@@ -1,11 +1,20 @@
 <div class="container">
-    <h1 class="center">Hello, World!</h1>
-    <p class="center">Welcome to this template.</p>
-    <p class="center"><fmt>toolName</fmt> is made with the purpose of offer a simple and dynamic server-side API for static blog-like websites.</p>
+    <h1 center>Hello, World!</h1>
+    <p center>Welcome to this template.</p>
+    <p center><fmt>toolName</fmt> is made with the purpose of offer a simple and dynamic server-side API for static blog-like websites.</p>
     
-    <button class="center outline" href="https://github.com/lumi2021/blogSite">See on github</button>
+    <group center>
+        <button class="outline" href="https://github.com/lumi2021/blogSite">See on github</button>
+        <button class="outline danger" href="/tutorial">See Documentation</button>
+    </group>
     
-    <p class="center">
+    <hr>
+    
+    <ul>
+        <li for="i, j in forTest"><fmt>j</fmt> - <fmt>i</fmt></li>
+    </ul>
+    
+    <p if="ifTest" class="center">
         This page was last reloaded in <fmt>dateTime.Day</fmt>/<fmt>dateTime.Month</fmt>/<fmt>dateTime.Year</fmt>
         at <fmt>dateTime.Hour</fmt>:<fmt>dateTime.Minute</fmt>:<fmt>dateTime.Second</fmt>
     </p>

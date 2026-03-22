@@ -3,7 +3,13 @@
 	"page-host-url": "http://localhost:5148/",
 
 	"global-variables": {
-		"toolName" : "BlogSite"
+		"toolName" : "BlogSite",
+		"ifTest": true,
+		"forTest": [
+			"foo",
+			"bar",
+			"baz"
+		]
 	},
 	
 	"generic-routes": {

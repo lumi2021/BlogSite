@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Text.RegularExpressions;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
@@ -17,12 +19,12 @@ public static class HtmlPreprocessor
         CancellationToken cancellationToken)
     {
         var config = Api.Configuration;
-        var interpreter = new Interpreter();
+        var interpreter = new InterpreterContext();
         
-        interpreter.SetVariable("dateTime", DateTime.Now);
-        interpreter.SetVariable("url", url);
+        interpreter.Set("dateTime", DateTime.Now);
+        interpreter.Set("url", url);
         foreach (var i in config.GlobalVariables)
-            interpreter.SetVariable(i.Key, i.Value);
+            interpreter.Set(i.Key, i.Value);
         
         var document = await globalTemplate.Context.OpenNewAsync(
             new Uri(config.PageHostUrl!, pageTemplateAsset.Route).ToString(), cancellationToken);
@@ -74,11 +76,91 @@ public static class HtmlPreprocessor
         return document;
     }
     
-    private static void AnalyzeElement(IDocument document, IElement element, Interpreter interpreter)
+    private static void AnalyzeElement(IDocument document, IElement element, InterpreterContext interpreter)
     {
-        foreach (var child in element.Children) AnalyzeElement(document, child, interpreter);
+        if (element.HasAttribute("for"))
+        {
+            var input = element.GetAttribute("for")!;
+            element.RemoveAttribute("for");
+            
+            var parent = element.Parent!;
+            element.Remove();
+            
+            try
+            {
+                string variable;
+                string? index = null;
+                string collection;
+
+                
+                var match = Regex.Match(input, @"(\w+)\s*,\s*(\w+)\s+in\s+(\w+)");
+                if (match.Success)
+                {
+                    variable = match.Groups[1].Value;
+                    index = match.Groups[2].Value;
+                    collection = match.Groups[3].Value;
+                    goto valid;
+                }
+                
+                match = Regex.Match(input, @"(\w+)\s+in\s+(\w+)");
+                if (match.Success)
+                {
+                    variable = match.Groups[1].Value;
+                    collection = match.Groups[2].Value;
+                    goto valid;
+                }
+                
+                throw new Exception("Invalid for expression syntax");
+                
+                valid:
+                var enumerable = (IEnumerable<object>)interpreter.Eval(collection);
+
+                foreach (var (i, v) in enumerable.Index())
+                {
+                    interpreter.Push();
+                    if (index != null) interpreter.Set(index, i);
+                    interpreter.Set(variable, v);
+
+                    var newElement = element.Clone();
+                    AnalyzeElement(document, (IElement)newElement, interpreter);
+                    parent.AppendChild(newElement);
+                    
+                    interpreter.Pop();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            return;
+        }
         
-        Console.WriteLine($"{element} {element.TagName}");
+        // Global attribute analysis
+        if (element.HasAttribute("if"))
+        {
+            try
+            {
+                var input = element.GetAttribute("if")!;
+                var result = interpreter.Eval(input);
+                if (result is not true)
+                {
+                    element.Remove();
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+        if (element.HasAttribute("center"))
+        {
+            element.RemoveAttribute("center");
+            element.ClassList.Add("center");
+        }
+
+        // Tag-specific analysis
         switch (element)
         {
             case IHtmlButtonElement @buttonElement when buttonElement.HasAttribute("href"):
@@ -120,7 +202,57 @@ public static class HtmlPreprocessor
             }break;
             
             case IHtmlUnknownElement @unk: Console.WriteLine($"Unknown element {unk} {unk.TagName}"); break;
-            default: Console.WriteLine($"Unknown element {element}"); break;
+        }
+        
+        // Children analysis
+        foreach (var child in element.Children)
+            AnalyzeElement(document, child, interpreter);
+    }
+    
+    class InterpreterContext
+    {
+        private readonly Stack<Dictionary<string, object>> _scopes = new([[]]);
+        private Interpreter? _interpreter;
+
+        public void Set(string name, object value)
+        {
+            _scopes.Peek()[name] = value;
+            _interpreter = null;
+        }
+        public void Remove(string name)
+        {
+            _scopes.Peek().Remove(name);
+            _interpreter = null;
+        }
+        public void Clear()
+        {
+            _scopes.Clear();
+            _interpreter = null;
+        }
+        
+        public void Push() => _scopes.Push([]);
+        public void Pop()
+        {
+            if (_scopes.Count == 1) throw new IndexOutOfRangeException();
+            var s = _scopes.Pop();
+            if (s.Count > 0) _interpreter = null;
+        }
+        
+        public object Eval(string expr)
+        {
+            var interpreter = _interpreter ?? NewInterpreterInstance();
+            return interpreter.Eval(expr);
+        }
+
+        private Interpreter NewInterpreterInstance()
+        {
+            var interpreter = new Interpreter();
+            foreach (var i in _scopes) 
+                foreach (var j in i)
+                    interpreter.SetVariable(j.Key, j.Value);
+
+            _interpreter = interpreter;
+            return interpreter;
         }
     }
 }
