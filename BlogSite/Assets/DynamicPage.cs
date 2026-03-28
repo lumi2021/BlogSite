@@ -1,11 +1,17 @@
 namespace BlogSite.Assets;
 
-public class DynamicPage(string route, string dom, Asset[] styles, Asset[] scripts) : Asset(route)
+public class DynamicPage(
+    string route, DynamicPage? parent,
+    string markup,
+    Dictionary<string, string> styles,
+    Dictionary<string, string> scripts
+) : Asset(route)
 {
-    public readonly string DomPath = Path.GetFullPath(dom);
-    public readonly Asset[] Stylesheets = styles;
-    public readonly Asset[] Scripts = scripts;
+    public readonly DynamicPage? Parent = parent;
     
-    public string Directory => Path.GetDirectoryName(DomPath) ?? string.Empty;
-    public override string ToString() => $"'{Route}' -> dynamic '{DomPath}'";
+    public readonly string DomPath = markup;
+    public readonly Dictionary<string, string> Stylesheets = styles;
+    public readonly Dictionary<string, string> Scripts = scripts;
+    
+    public override string ToString() => $"'{Route}'";
 }

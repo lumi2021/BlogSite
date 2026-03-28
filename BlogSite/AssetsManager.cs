@@ -1,3 +1,4 @@
+using System.Text;
 using BlogSite.Assets;
 using BlogSite.Exceptions;
 
@@ -5,9 +6,7 @@ namespace BlogSite;
 
 public class AssetsManager
 {
-    // maps file/directory -> asset
-    private Dictionary<string, Asset> _assetsPool = [];
-    private Dictionary<string, Dictionary<string, Asset>> _sections = [];
+    private Dictionary<string, Asset> _assetPool = [];
     
     public void InvalidateAllAssets()
     {
@@ -16,113 +15,79 @@ public class AssetsManager
     public void LoadAllAssets()
     {
         var config = Api.Configuration;
-        
-        { // Loads global page
-            if (config.Global == null) throw new NotImplementedException();
-            
-            if (!Directory.Exists(config.Global))
-                throw new FileNotFoundException($"Provided global page's directory '{config.Global}' does not exist.");
-            
-            var (dom, styles, scripts) = EnumerateDirectoryContents(config, config.Global);
 
-            var stylesList = new List<Asset>();
-            var scriptsList = new List<Asset>();
+        Stack<(int lvl, int i, int c, StaticRouteNode n)> nodesToIterate = [];
+        StringBuilder fullPath = new("/");
 
-            foreach (var i in styles)
-            {
-                var ass = new StaticFile(PathToRoute(i, config.Global, "/global"), i);
-                stylesList.Add(ass);
-                _assetsPool.Add(i, ass);
-            }
-
-            foreach (var i in scripts)
-            {
-                var ass = new StaticFile(PathToRoute(i, config.Global), i);
-                scriptsList.Add(ass);
-                _assetsPool.Add(i, ass);
-            }
-
-            var domAsset = new DynamicPage(PathToRoute(dom, config.Global),
-                dom, [.. stylesList], [.. scriptsList]);
-            _ = Api.Baker.UpdateGlobalTemplateAsync(domAsset, CancellationToken.None);
+        foreach (var i in config.Routes)
+        {
+            LoadSingleAsset("", (StaticRouteNode)i, config);
+            nodesToIterate.Push((0, 1, 0, (StaticRouteNode)i));
         }
         
-        { // loads general routes
-            var p = Console.GetCursorPosition();
-            int done = 0, total = config.GenericRoutes.Count;
-
-            foreach (var (route, source) in config.GenericRoutes)
-            {
-                Console.SetCursorPosition(p.Left, p.Top);
-                Console.Write(new string(' ', Console.WindowWidth) + "\r");
-                Console.WriteLine($"Evaluating generic pages [{done}/{total}]");
-                try
-                {
-                    var (dom, styles, scripts) = EnumerateDirectoryContents(config, source);
-                    var stylesList = new List<Asset>();
-                    var scriptsList = new List<Asset>();
-
-                    foreach (var i in styles)
-                    {
-                        var ass = new StaticFile(PathToRoute(i, source, route), i);
-                        stylesList.Add(ass);
-                        _assetsPool.Add(i, ass);
-                    }
-                    foreach (var i in scripts)
-                    {
-                        var ass = new StaticFile(PathToRoute(i, source, route), i);
-                        scriptsList.Add(ass);
-                        _assetsPool.Add(i, ass);
-                    }
-                    _assetsPool.Add(dom, new DynamicPage(route, dom, [.. stylesList], [.. scriptsList]));
-                }
-                // TODO proper error handling
-                catch (NoDomException e) { Console.WriteLine("Error: {e}"); }
-                catch (TooMuchDomException e) { Console.WriteLine("Error: {e}"); }
-                done++;
-            }
+        while (nodesToIterate.Count > 0)
+        {
+            var info = nodesToIterate.Pop();
             
-            Console.SetCursorPosition(p.Left, p.Top);
-            Console.Write(new string(' ', Console.WindowWidth) + "\r");
-            Console.WriteLine($"Evaluating generic pages [DONE]");
-        }
-        
-        { // loads sections
-            foreach (var (id, section) in config.Sections)
+            if (info.c < info.n.NamedSubroutes.Count + info.n.StatusSubroutes.Count)
             {
-                var p = Console.GetCursorPosition();
-                int done = 0, total = 0;
-
-                if (!Directory.Exists(section.Path)) {
-                    Console.WriteLine($"Section `{id}` points to `{Path.GetFullPath(section.Path)}`, but the directory does not exist. Ignoring.");
-                    continue;
-                }
-                var sectionEntries = Directory.GetFileSystemEntries(section.Path)
-                    .Where(e => !e.StartsWith('_')).ToArray();
-                total = sectionEntries.Length;
+                var i = info.c++;
+                //nodesToIterate.Push(info);
+                var sub = i < info.n.NamedSubroutes.Count
+                    ? info.n.NamedSubroutes.ElementAt(i).Value
+                    : info.n.StatusSubroutes.ElementAt(i - info.n.NamedSubroutes.Count).Value;
                 
-                foreach (var i in sectionEntries)
+                switch (sub)
                 {
-                    Console.SetCursorPosition(p.Left, p.Top);
-                    Console.Write(new string(' ', Console.WindowWidth) + "\r");
-                    Console.WriteLine($"Evaluating {id} entries in {section} [{done}/{total}]");
+                    case StaticRouteNode @static:
+                    {
+                        info.i = fullPath.Length;
 
-                    // TODO
-                    done++;
+                        if (@static.Path != null) // status code errors have no subroute
+                        {
+                            var lastLength = fullPath.Length;
+                            fullPath.Append(@static.Path);
+
+                            nodesToIterate.Push(info);
+                            nodesToIterate.Push((info.lvl+1, lastLength, 0, @static));
+                        }
+                        LoadSingleAsset("", @static, config);
+                    } continue;
+                    
+                    case AutoRouteNode @auto:
+                    {
+                      LoadAutoRouteAssets(fullPath.ToString(), auto, config);
+                    } continue;
                 }
-            
-                Console.SetCursorPosition(p.Left, p.Top);
-                Console.Write(new string(' ', Console.WindowWidth) + "\r");
-                Console.WriteLine($"Evaluating {id} entries in {section} [DONE]");
             }
+            
+            fullPath.Length = info.i;
         }
-
-        foreach (var i in _assetsPool) Api.Router.RegisterAsset(i.Value);
     }
-    
+
+    public void LoadSingleAsset(string fullPath, StaticRouteNode node, Configuration config)
+    {
+        var parentAsset = (DynamicPage)node.Parent?.Asset!;
+        var pathRoot = Path.GetFullPath(node.source!);
+        var contents = EnumerateDirectoryContents(config, pathRoot);
+
+        var structure = contents.dom;
+        var stylesMaps = contents.styles.ToDictionary(i => i[pathRoot.Length..]);
+        var scriptsMaps = contents.scripts.ToDictionary(i => i[pathRoot.Length..]);
+        
+        var asset = new DynamicPage(fullPath, parentAsset, structure, stylesMaps, scriptsMaps);
+        node.Asset = asset;
+        _assetPool.Add(pathRoot, asset);
+    }
+    public void LoadAutoRouteAssets(string fullRootPath, AutoRouteNode node, Configuration config)
+    {
+        //Console.WriteLine($"fuck? {fullRootPath} {node}");
+    }
     
     public static (string dom, string[] styles, string[] scripts) EnumerateDirectoryContents(Configuration config, string path)
     {
+        if (!Directory.Exists(path)) throw new DirectoryNotFoundException(path);
+        
         var domFiles = config.FileQuery.Dom!.SelectMany(e => Directory.EnumerateFiles(path, e)).ToArray();
         var styleFiles = config.FileQuery.Style!.SelectMany(e => Directory.EnumerateFiles(path, e)).ToArray();
         var scriptFiles = config.FileQuery.Script!.SelectMany(e => Directory.EnumerateFiles(path, e)).ToArray();

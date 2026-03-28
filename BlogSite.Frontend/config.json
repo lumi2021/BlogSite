@@ -5,27 +5,36 @@
 	"global-variables": {
 		"toolName" : "BlogSite",
 		"ifTest": true,
-		"forTest": [
-			"foo",
-			"bar",
-			"baz"
-		]
+		"forTest": ["foo", "bar", "baz"]
 	},
 	
-	"generic-routes": {
-		"/": "./pages/main",
-		"@404": "./pages/error-404"
-	},
+	"routes": [
+		{
+			"path": "/",
+			"source": "./global",
+			
+			"subroutes": [
+				{ "stat":  404, "source": "./pages/error-404" },
+				{ "path": "/", "source": "./pages/main" },
 
-	"sections": {
-		"blog": {
-			"path": "./blog"
-		},
-		"tutorials": {
-			"path": "./docs"
+				{
+					"path":  "/blog",
+					"source": "./pages/blog/container",
+					"subroutes": [
+						{ "path": "/", "source": "./pages/blog/index" },
+						{ "auto": "./blog", "id": "blogs_index" }
+					]
+				},
+
+				{
+					"path":  "/docs",
+					"source": "./pages/docs/index",
+					"subroutes": [
+						{ "auto": "./docs", "mode": "tree", "id": "docs_index" }
+					]
+				}
+			]
 		}
-	},
-
-	"global": "./global",
+	],
 	"components": "./components"
 }

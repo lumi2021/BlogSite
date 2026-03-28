@@ -5,4 +5,10 @@
   <ItemGroup>
     <Folder Include="components" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="pages\blog\container\index.html" />
+    <Content Include="pages\blog\index\index.html" />
+    <Content Include="pages\docs\container\index.html" />
+    <Content Include="pages\docs\index\index.html" />
+  </ItemGroup>
 </Project>

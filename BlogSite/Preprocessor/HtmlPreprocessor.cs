@@ -40,22 +40,22 @@ public static class HtmlPreprocessor
 
         var head = document.Head ?? document.AppendChild(document.CreateElement("head"));
         // Appending styles
-        foreach (var i in (IEnumerable<Asset>)[.. globalTemplateAsset.Stylesheets, .. pageTemplateAsset.Stylesheets])
-        {
-            var l = document.CreateElement("link");
-            l.SetAttribute("rel", "stylesheet");
-            l.SetAttribute("href", new Uri(config.PageHostUrl!, i.Route).ToString());
-            head.AppendChild(l);
-        }
-        
-        // Appending scripts
-        foreach (var i in (IEnumerable<Asset>)[.. globalTemplateAsset.Scripts, .. pageTemplateAsset.Scripts])
-        {
-            var l = document.CreateElement("script");
-            l.SetAttribute("src", new Uri(config.PageHostUrl!, i.Route).ToString());
-            l.SetAttribute("defer", null);
-            head.AppendChild(l);
-        }
+        // foreach (var i in (IEnumerable<Asset>)[.. globalTemplateAsset.Stylesheets, .. pageTemplateAsset.Stylesheets])
+        // {
+        //     var l = document.CreateElement("link");
+        //     l.SetAttribute("rel", "stylesheet");
+        //     l.SetAttribute("href", new Uri(config.PageHostUrl!, i.Route).ToString());
+        //     head.AppendChild(l);
+        // }
+        //
+        // // Appending scripts
+        // foreach (var i in (IEnumerable<Asset>)[.. globalTemplateAsset.Scripts, .. pageTemplateAsset.Scripts])
+        // {
+        //     var l = document.CreateElement("script");
+        //     l.SetAttribute("src", new Uri(config.PageHostUrl!, i.Route).ToString());
+        //     l.SetAttribute("defer", null);
+        //     head.AppendChild(l);
+        // }
         
         var importedHtml = document.Import(globalTemplate.DocumentElement!);
         document.AppendChild(importedHtml);

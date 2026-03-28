@@ -1,7 +1,8 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BlogSite.Assets;
 
 namespace BlogSite;
 
@@ -14,7 +15,7 @@ public class Configuration
     public Uri? PageHostUrl { get; set; }
     
     [JsonPropertyName("file-query")]
-    public FileQuery FileQuery { get; set; } = new FileQuery
+    public FileQuery FileQuery { get; set; } = new()
     {
         Dom = ["*.html", "*.md", "*.mdx"],
         Style = ["*.css"],
@@ -24,11 +25,9 @@ public class Configuration
     [JsonPropertyName("global-variables"), JsonConverter(typeof(VariableDictionaryConverter))]
     public Dictionary<string, object> GlobalVariables { get; set; } = [];
     
-    [JsonPropertyName("generic-routes")]
-    public Dictionary<string, string> GenericRoutes { get; set; } = [];
-    
-    [JsonPropertyName("sections")]
-    public Dictionary<string, Section> Sections { get; set; } = [];
+    [JsonPropertyName("routes")]
+    public GenericRouteNode[] RawRoutesData { get; set; } = [];
+    public RouteNode[] Routes = [];
     
     [JsonPropertyName("global")]
     public string? Global { get; set; }
@@ -38,24 +37,122 @@ public class Configuration
 
 public record FileQuery
 {
-    [JsonConverter(typeof(StringOrArrayConverter))]
+    [JsonPropertyName("dom"), JsonConverter(typeof(StringOrArrayConverter))]
     public string[]? Dom { get; set; }
-    [JsonConverter(typeof(StringOrArrayConverter))]
+    [JsonPropertyName("style"), JsonConverter(typeof(StringOrArrayConverter))]
     public string[]? Style { get; set; }
-    [JsonConverter(typeof(StringOrArrayConverter))]
+    [JsonPropertyName("script"), JsonConverter(typeof(StringOrArrayConverter))]
     public string[]? Script { get; set; }
 }
 
-public record Section
+public record GenericRouteNode
 {
     [JsonPropertyName("path")]
-    public string Path { get; set; }
+    public string? Path { get; set; }
+    [JsonPropertyName("stat")]
+    public int? Stat { get; set; }
+    [JsonPropertyName("auto")]
+    public string? Auto { get; set; }
+    [JsonPropertyName("mode")]
+    public AutoRouteMode? AutoMode { get; set; }
+    [JsonPropertyName("source")]
+    public string? Source { get; set; }
+    [JsonPropertyName("default")]
+    public string? Default { get; set; }
+    [JsonPropertyName("path-matching")]
+    public RoutePathMatching? PathMatching { get; set; }
+    [JsonPropertyName("subroutes")]
+    public GenericRouteNode[]? Subroutes { get; set; }
 }
 
-[JsonSerializable(typeof(Configuration))]
-[JsonSerializable(typeof(Section))]
-[JsonSerializable(typeof(FileQuery))]
-internal partial class ConfigJsonContext : JsonSerializerContext
+public abstract class RouteNode
+{
+    public RouteNode? Parent { get; set; }
+    public Asset Asset { get; set; }
+}
+public class StaticRouteNode : RouteNode
+{
+    public string? Path { get; set; }
+    public int? Status { get; set; }
+    public RoutePathMatching PathMatching { get; set; }
+    
+    public string? source { get; set; }
+    public string? Default { get; set; }
+
+    
+    public StaticRouteNode? NoSubrouteOverride { get; set; } = null;
+    public Dictionary<string, RouteNode> NamedSubroutes { get; set; } = [];
+    public Dictionary<int, RouteNode> StatusSubroutes { get; set; } = [];
+
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        
+        sb.Append("{ ");
+
+        if (Path != null)
+        {
+            sb.Append("\"path\": ");
+            sb.Append($"\"{Path}\"");
+            sb.Append(", ");
+        }
+
+        if (Status.HasValue)
+        {
+            sb.Append("\"status\": ");
+            sb.Append(Status.Value);
+            sb.Append(", ");
+        }
+        
+        sb.Append("\"path-matching\": ");
+        sb.Append($"\"{PathMatching}\"");
+        sb.Append(", ");
+        
+        sb.Append("\"subroutes\": ");
+        sb.Append($"[[{NamedSubroutes.Count}], [{StatusSubroutes.Count}]]");
+        
+        sb.Append(" }");
+        
+        return sb.ToString();
+    }
+}
+public class AutoRouteNode : RouteNode
+{
+    public string? Path { get; set; }
+    public AutoRouteMode Mode { get; set; }
+
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+
+        sb.Append("{ ");
+
+        sb.Append("\"auto\": ");
+        sb.Append($"\"{Path}\"");
+        sb.Append(", ");
+
+        sb.Append("\"mode\": ");
+        sb.Append($"\"{Mode}\"");
+
+        sb.Append(" }");
+
+        return sb.ToString();
+    }
+}
+
+public enum AutoRouteMode { List, Tree }
+public enum RoutePathMatching { Default, End }
+
+[JsonSourceGenerationOptions(
+        WriteIndented = false,
+        UseStringEnumConverter = true
+    ), 
+    JsonSerializable(typeof(Configuration)),
+    JsonSerializable(typeof(FileQuery)),
+    JsonSerializable(typeof(GenericRouteNode)),
+    JsonSerializable(typeof(RoutePathMatching)),
+    JsonSerializable(typeof(AutoRouteMode))]
+internal partial class GenericJsonConverter : JsonSerializerContext
 {
 }
 
@@ -80,7 +177,6 @@ public class StringOrArrayConverter : JsonConverter<string[]>
             default: throw new JsonException("Expected string or array.");
         }
     }
-
     public override void Write(Utf8JsonWriter writer, string[] value, JsonSerializerOptions options)
     {
         if (value.Length == 1)
@@ -112,11 +208,7 @@ public class VariableDictionaryConverter : JsonConverter<Dictionary<string, obje
 
         return dict;
     }
-
-    public override void Write(Utf8JsonWriter writer, Dictionary<string, object> value, JsonSerializerOptions options)
-    {
-        throw new UnreachableException();
-    }
+    public override void Write(Utf8JsonWriter writer, Dictionary<string, object> value, JsonSerializerOptions options) => throw new UnreachableException();
 }
 public class AnyObjectConverter : JsonConverter<object>
 {
@@ -159,8 +251,7 @@ public class AnyObjectConverter : JsonConverter<object>
         throw new NotImplementedException();
     }
 
-    public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options) =>
-        WriteAnytypeValue(writer, value, options);
+    public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options) => WriteAnytypeValue(writer, value, options);
     private void WriteAnytypeValue(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
         switch (value)
@@ -177,7 +268,6 @@ public class AnyObjectConverter : JsonConverter<object>
             
             case Dictionary<string, object> @v:
                 throw new NotImplementedException();
-                break;
         }
     }
 }

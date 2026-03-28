@@ -1,72 +1,58 @@
+using System.Collections;
+using System.Data;
 using System.Text;
 using BlogSite.Assets;
+using BlogSite.Exceptions;
 
 namespace BlogSite;
 
 public partial class Router
 {
-    private readonly Dictionary<string, Asset> _routesMap = new();
-    private Asset? _notFoundPage;
-    
     public async Task Route(HttpContext context, CancellationToken cancellationToken)
     {
-        var url = context.Request.Path.Value;
-        if (url != null && _routesMap.TryGetValue(url, out var page))
-        {
-            context.Response.StatusCode = 200;
-            await SolveRouterResult(page, context, cancellationToken);
-        }
-        else await NotFoundResponse(context, cancellationToken);
-    }
-
-    public void RegisterAsset(Asset asset)
-    {
-        var url = asset.Route;
-        switch (url[0])
-        {
-            case '@':
-            case '/': break;
-            default: url = $"/{url}"; break;
-        }
+        var url = context.Request.Path.Value?.Trim('/') ?? throw new NoNullAllowedException("URL value was null");
+        var config = Api.Configuration;
         
-        switch (url)
-        {
-            case "@404": _notFoundPage = asset; break;
-            default: _routesMap[url] = asset; break;
-        }
-    }
-    public void InvalidateAll() => _routesMap.Clear();
-    
-    private async Task NotFoundResponse(HttpContext context, CancellationToken cancellationToken)
-    {
-        context.Response.StatusCode = 404;
-        if (_notFoundPage != null) await SolveRouterResult(_notFoundPage, context, cancellationToken);
-    }
+        var urlTokens = new Queue<string>(url.Split('/'));
 
-    private async Task SolveRouterResult(Asset result, HttpContext context, CancellationToken cancellationToken)
-    {
-        switch (result)
+        List<DynamicPage> _last404 = [];
+
+        try
         {
-            case DynamicPage dynamicPage:
-                context.Response.ContentType = "text/html";
-                var pageContent = await Api.Baker.BakeDynamicPageAsync(
-                    context.Request.Host + context.Request.Path,
-                    dynamicPage, cancellationToken);
-                await context.Response.WriteAsync(pageContent, new UTF8Encoding(), cancellationToken);
-                return;
+            StaticRouteNode? currentRoute = (StaticRouteNode)config.Routes
+                .First(e => e is StaticRouteNode @st && st.Path == urlTokens.Dequeue());
+            List<DynamicPage> _pages = [(DynamicPage)currentRoute.Asset];
             
-            case StaticFile staticFile:
-                context.Response.ContentType = Path.GetExtension(staticFile.FilePath) switch
+            while (urlTokens.Count > 0)
+            {
+                var token = urlTokens.Dequeue();
+                if (currentRoute.StatusSubroutes.TryGetValue(404, out var subroute))
+                    _last404 = [.._pages, (DynamicPage)subroute.Asset];
+
+                if (currentRoute.NamedSubroutes.TryGetValue(token, out var subRoute))
                 {
-                    ".html" => "text/html",
-                    ".css" => "text/css",
-                    ".js" => "text/javascript",
-                    _ => "text/plain"
-                };
-                await context.Response.SendFileAsync(staticFile.FilePath, cancellationToken);
-                return;
-                
-            default: throw new NotImplementedException();
+                    currentRoute = (StaticRouteNode)subRoute;
+                    _pages.Add((DynamicPage)subRoute.Asset);
+                }
+                else throw new NotFoundRouterException();
+            }
+
+            while (currentRoute.NamedSubroutes.TryGetValue("", out var subRoute))
+            {
+                currentRoute = (StaticRouteNode)subRoute;
+                _pages.Add((DynamicPage)subRoute.Asset);
+            }
+
+            var docHtml = await Api.Baker.BakeDynamicPageAsync(url, [.. _pages], cancellationToken);
+            await context.Response.WriteAsync(docHtml, cancellationToken);
+        }
+        catch (NotFoundRouterException e)
+        {
+            context.Response.StatusCode = 404;
+        }
+        catch (RouterException e)
+        {
+            Console.WriteLine(e);
         }
     }
 }
