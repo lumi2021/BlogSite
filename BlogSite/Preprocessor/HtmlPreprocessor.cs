@@ -12,10 +12,11 @@ namespace BlogSite.Preprocessor;
 public static class HtmlPreprocessor
 {
 
-    public static async Task<IDocument> BakePageTemplates(
+    public static async Task BakePageTemplates(
         string url,
-        DynamicPage globalTemplateAsset, IDocument globalTemplate,
-        DynamicPage pageTemplateAsset, IDocument pageTemplate,
+        IDocument document,
+        DynamicPage[] templates,
+        IBrowsingContext angleContext,
         CancellationToken cancellationToken)
     {
         var config = Api.Configuration;
@@ -23,60 +24,49 @@ public static class HtmlPreprocessor
         
         interpreter.Set("dateTime", DateTime.Now);
         interpreter.Set("url", url);
-        foreach (var i in config.GlobalVariables)
-            interpreter.Set(i.Key, i.Value);
-        
-        var document = await globalTemplate.Context.OpenNewAsync(
-            new Uri(config.PageHostUrl!, pageTemplateAsset.Route).ToString(), cancellationToken);
-        foreach (var i in document.Children.ToArray()) document.RemoveChild(i);
-        
-        if (globalTemplate.Doctype != null!)
+        foreach (var i in config.GlobalVariables) interpreter.Set(i.Key, i.Value);
+
+        Stack<string> styles = [];
+        Stack<string> scripts = [];
+
+        INode[] lastElements = [];
+        for (var i = templates.Length - 1; i >= 0; i--)
         {
-            var dt = globalTemplate.Doctype;
-            var newDoctype = document.Implementation.CreateDocumentType(
-                dt.Name, dt.PublicIdentifier, dt.SystemIdentifier);
-            document.InsertBefore(newDoctype, document.FirstChild);
+            var template = await angleContext.OpenAsync(req
+                => req.Content(File.ReadAllText(templates[i].DomPath)), cancellationToken);
+            if (template.Body == null) continue;
+            
+            var content = lastElements;
+            
+            AnalyzeElement(document, template.Body, content, interpreter);
+            lastElements = document.Import(template.Body).ChildNodes.ToArray();
         }
 
+        if (lastElements != null) document.Body!.Append(lastElements);
+        
         var head = document.Head ?? document.AppendChild(document.CreateElement("head"));
         // Appending styles
-        // foreach (var i in (IEnumerable<Asset>)[.. globalTemplateAsset.Stylesheets, .. pageTemplateAsset.Stylesheets])
-        // {
-        //     var l = document.CreateElement("link");
-        //     l.SetAttribute("rel", "stylesheet");
-        //     l.SetAttribute("href", new Uri(config.PageHostUrl!, i.Route).ToString());
-        //     head.AppendChild(l);
-        // }
-        //
-        // // Appending scripts
-        // foreach (var i in (IEnumerable<Asset>)[.. globalTemplateAsset.Scripts, .. pageTemplateAsset.Scripts])
-        // {
-        //     var l = document.CreateElement("script");
-        //     l.SetAttribute("src", new Uri(config.PageHostUrl!, i.Route).ToString());
-        //     l.SetAttribute("defer", null);
-        //     head.AppendChild(l);
-        // }
-        
-        var importedHtml = document.Import(globalTemplate.DocumentElement!);
-        document.AppendChild(importedHtml);
-        
-        if (document.Body != null) AnalyzeElement(document, document.Body!, interpreter);
-        if (pageTemplate.Body != null) AnalyzeElement(pageTemplate, pageTemplate.Body, interpreter);
-
-        var body = document.Body ?? (IElement)document.AppendChild(document.CreateElement("body"));
-        var contentElement = body.QuerySelector("content");
-
-        if (contentElement != null && pageTemplate.Body is { ChildNodes: {} @nodes, ChildNodes.Length: > 0 })
+        while (styles.Count > 0) 
         {
-            List<INode> toReplace = [];
-            toReplace.AddRange(nodes.OfType<IElement>().Select(i => document.Import(i)));
-            contentElement.Replace([.. toReplace]);
+            var j = styles.Pop();
+            var l = document.CreateElement("link");
+            l.SetAttribute("rel", "stylesheet");
+            l.SetAttribute("href", new Uri(config.PageHostUrl!, j).ToString());
+            head.AppendChild(l);
         }
         
-        return document;
+        // Appending scripts
+        while (scripts.Count > 0) 
+        {
+            var j = styles.Pop();
+            var l = document.CreateElement("script");
+            l.SetAttribute("src", new Uri(config.PageHostUrl!, j).ToString());
+            l.SetAttribute("defer", null);
+            head.AppendChild(l);
+        }
     }
     
-    private static void AnalyzeElement(IDocument document, IElement element, InterpreterContext interpreter)
+    private static void AnalyzeElement(IDocument document, IElement element, INode[] content, InterpreterContext interpreter)
     {
         if (element.HasAttribute("for"))
         {
@@ -122,7 +112,7 @@ public static class HtmlPreprocessor
                     interpreter.Set(variable, v);
 
                     var newElement = element.Clone();
-                    AnalyzeElement(document, (IElement)newElement, interpreter);
+                    AnalyzeElement(document, (IElement)newElement, content, interpreter);
                     parent.AppendChild(newElement);
                     
                     interpreter.Pop();
@@ -200,13 +190,18 @@ public static class HtmlPreprocessor
                 spanElement.ClassList.Add(["icon", ..iconElement.ClassList]);
                 iconElement.Replace(spanElement);
             }break;
+
+            case IHtmlUnknownElement { TagName: "CONTENT" } @contentElement:
+            {
+                contentElement.Replace(content);
+            } break;
             
             case IHtmlUnknownElement @unk: Console.WriteLine($"Unknown element {unk} {unk.TagName}"); break;
         }
         
         // Children analysis
         foreach (var child in element.Children)
-            AnalyzeElement(document, child, interpreter);
+            AnalyzeElement(document, child, content, interpreter);
     }
     
     class InterpreterContext

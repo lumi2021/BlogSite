@@ -72,10 +72,10 @@ public class AssetsManager
         var contents = EnumerateDirectoryContents(config, pathRoot);
 
         var structure = contents.dom;
-        var stylesMaps = contents.styles.ToDictionary(i => i[pathRoot.Length..]);
-        var scriptsMaps = contents.scripts.ToDictionary(i => i[pathRoot.Length..]);
+        var stylesMaps = contents.styles.Select(i => i[pathRoot.Length..]);
+        var scriptsMaps = contents.scripts.Select(i => i[pathRoot.Length..]);
         
-        var asset = new DynamicPage(fullPath, parentAsset, structure, stylesMaps, scriptsMaps);
+        var asset = new DynamicPage(fullPath, parentAsset, structure, [..stylesMaps], [..scriptsMaps]);
         node.Asset = asset;
         _assetPool.Add(pathRoot, asset);
     }

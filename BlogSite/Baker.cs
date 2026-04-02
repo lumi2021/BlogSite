@@ -25,6 +25,14 @@ public partial class Baker
     public async Task<string> BakeDynamicPageAsync(string url, DynamicPage[] pageStack, CancellationToken cancellationToken)
     {
         var document = await _angleContext.OpenNewAsync(null, cancellationToken);
+        var stylesheets = new HashSet<string>();
+        var scripts = new HashSet<string>();
+
+        foreach (var page in pageStack)
+        {
+            foreach (var i in page.Stylesheets) stylesheets.Add(i);
+            foreach (var i in page.Scripts) scripts.Add(i);
+        }
         
         if (document.Doctype == null!)
         {
@@ -43,18 +51,30 @@ public partial class Baker
             var viewport = document.CreateElement("meta");
             charset.SetAttribute("name", "viewport");
             charset.SetAttribute("content", "width=device-width, initial-scale=1");
-            head.AppendChild(charset);
+            head.AppendChild(viewport);
+
+            foreach (var i in stylesheets)
+            {
+                var link =  document.CreateElement("link");
+                link.SetAttribute("rel", Path.Combine(url, i.TrimStart('/')));
+                link.SetAttribute("type", "text/css");
+                head.AppendChild(link);
+            }
+            
+            foreach (var i in scripts)
+            {
+                var script = document.CreateElement("script");
+                script.SetAttribute("type", "text/javascript");
+                script.SetAttribute("src", Path.Combine(url, i.TrimStart('/')));
+                script.SetAttribute("defer", null);
+                head.AppendChild(script);
+            }
         }
 
         var body = document.Body ?? (IHtmlElement)html.AppendChild(document.CreateElement("body"));
         body.InnerHtml = string.Empty;
         
-        
-        //var doc = await File.ReadAllTextAsync(page.DomPath, cancellationToken);
-        //var pageTemplate = await _angleContext.OpenAsync(req => req.Content(doc), cancellationToken);
-        
-        //var result = await HtmlPreprocessor.BakePageTemplates(url,
-        //    _globalTemplateAsset, _globalTemplateDom, page, pageTemplate, cancellationToken);
+        await HtmlPreprocessor.BakePageTemplates(url, document, [.. pageStack], _angleContext, cancellationToken);
         return document.ToHtml(new PrettyMarkupFormatter());
     }
 }

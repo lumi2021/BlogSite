@@ -12,8 +12,11 @@ public partial class Router
     {
         var url = context.Request.Path.Value?.Trim('/') ?? throw new NoNullAllowedException("URL value was null");
         var config = Api.Configuration;
+
+        var dirPath = Path.GetDirectoryName(url) ?? "";
+        var fileName = Path.GetFileName(url);
         
-        var urlTokens = new Queue<string>(url.Split('/'));
+        var urlTokens = new Queue<string>(dirPath.Split('/'));
 
         List<DynamicPage> _last404 = [];
 
