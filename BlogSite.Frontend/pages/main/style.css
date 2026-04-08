@@ -1,0 +1,25 @@
+.baby-photos {
+    margin: 0 10em 0 10em;
+    width: calc(100% - 20em);
+    display: flex;
+    flex-flow: row wrap;
+    align-content: stretch;
+    
+    div {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+        margin: 1em;
+    }
+
+    img {
+        
+        &:not(.l1):not(.l2) {
+            max-width: calc(80% / 2);
+            height: fit-content;
+        }
+        &.l1 { max-width: calc(80% / 3); height: fit-content; }
+        &.l2 { max-width: calc(80% / 3 * 2); height: 100%; }
+    }
+}

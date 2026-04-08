@@ -28,10 +28,10 @@ public partial class Baker
         var stylesheets = new HashSet<string>();
         var scripts = new HashSet<string>();
 
-        foreach (var page in pageStack)
+        foreach (var (level, page) in pageStack.Index())
         {
-            foreach (var i in page.Stylesheets) stylesheets.Add(i);
-            foreach (var i in page.Scripts) scripts.Add(i);
+            foreach (var i in page.Stylesheets) stylesheets.Add(ManglePath(i, level));
+            foreach (var i in page.Scripts) scripts.Add(ManglePath(i, level));
         }
         
         if (document.Doctype == null!)
@@ -56,8 +56,8 @@ public partial class Baker
             foreach (var i in stylesheets)
             {
                 var link =  document.CreateElement("link");
-                link.SetAttribute("rel", Path.Combine(url, i.TrimStart('/')));
-                link.SetAttribute("type", "text/css");
+                link.SetAttribute("rel", "stylesheet");
+                link.SetAttribute("href", Path.Combine(url, i.TrimStart('/')));
                 head.AppendChild(link);
             }
             
@@ -76,5 +76,26 @@ public partial class Baker
         
         await HtmlPreprocessor.BakePageTemplates(url, document, [.. pageStack], _angleContext, cancellationToken);
         return document.ToHtml(new PrettyMarkupFormatter());
+    }
+
+    public static string ManglePath(string path, int level)
+    {
+        string? dir = Path.GetDirectoryName(path);
+        string filename = Path.GetFileNameWithoutExtension(path);
+        string extension = Path.GetExtension(path);
+
+        var newName = $"{filename}.{level}{extension}";
+        return dir != null ? Path.Combine(dir, newName) : newName;
+    }
+    public static string FixLink(string path, DynamicPage page, int level)
+    {
+        if (path.StartsWith("https://") || path.StartsWith("http://")) return path;
+
+        var config = Api.Configuration;
+        var pathTrimmed = path.TrimEnd('/');
+
+        return Path.Exists(Path.Combine(page.DirPath, pathTrimmed))
+            ? new Uri(config.PageHostUrl ?? throw new NullReferenceException(), Path.Combine(page.Route, ManglePath(path, level))).ToString()
+            : new Uri(config.PageHostUrl ?? throw new NullReferenceException(), Path.Combine(page.Route, path)).ToString();
     }
 }

@@ -7,11 +7,12 @@
 		"ifTest": true,
 		"forTest": ["foo", "bar", "baz"]
 	},
+	"file-query": { "recursive-search": true },
 	
 	"routes": [
 		{
 			"path": "/",
-			"source": "./global",
+			"source": "./root",
 			
 			"subroutes": [
 				{ "stat":  404, "source": "./pages/error-404" },

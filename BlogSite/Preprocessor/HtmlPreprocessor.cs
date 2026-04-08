@@ -33,16 +33,17 @@ public static class HtmlPreprocessor
         for (var i = templates.Length - 1; i >= 0; i--)
         {
             var template = await angleContext.OpenAsync(req
-                => req.Content(File.ReadAllText(templates[i].DomPath)), cancellationToken);
+                => req.Content(File.ReadAllText(templates[i].Template)), cancellationToken);
             if (template.Body == null) continue;
             
             var content = lastElements;
+            var ctx = new AnalyzingContext(url, templates[i], i);
             
-            AnalyzeElement(document, template.Body, content, interpreter);
+            AnalyzeElement(ctx, document, template.Body, content, interpreter);
             lastElements = document.Import(template.Body).ChildNodes.ToArray();
         }
 
-        if (lastElements != null) document.Body!.Append(lastElements);
+        if (lastElements != null!) document.Body!.Append(lastElements);
         
         var head = document.Head ?? document.AppendChild(document.CreateElement("head"));
         // Appending styles
@@ -66,7 +67,12 @@ public static class HtmlPreprocessor
         }
     }
     
-    private static void AnalyzeElement(IDocument document, IElement element, INode[] content, InterpreterContext interpreter)
+    private static void AnalyzeElement(
+        AnalyzingContext ctx,
+        IDocument document,
+        IElement element,
+        INode[] content,
+        InterpreterContext interpreter)
     {
         if (element.HasAttribute("for"))
         {
@@ -112,7 +118,7 @@ public static class HtmlPreprocessor
                     interpreter.Set(variable, v);
 
                     var newElement = element.Clone();
-                    AnalyzeElement(document, (IElement)newElement, content, interpreter);
+                    AnalyzeElement(ctx, document, (IElement)newElement, content, interpreter);
                     parent.AppendChild(newElement);
                     
                     interpreter.Pop();
@@ -149,10 +155,21 @@ public static class HtmlPreprocessor
             element.RemoveAttribute("center");
             element.ClassList.Add("center");
         }
-
+        
+        if (element.HasAttribute("href"))
+            element.SetAttribute("href", Baker.FixLink(element.GetAttribute("href")!, ctx.Page, ctx.level));
+        else if (element.HasAttribute("src"))
+            element.SetAttribute("src", Baker.FixLink(element.GetAttribute("src")!, ctx.Page, ctx.level));
+        
         // Tag-specific analysis
         switch (element)
         {
+            case IHtmlImageElement @imgElement when !imgElement.HasAttribute("alt"):
+            {
+                var src = imgElement.GetAttribute("href");
+                imgElement.SetAttribute("alt", src == null ? "No src provided" : "Cannot load '{src}'");
+            } break;
+            
             case IHtmlButtonElement @buttonElement when buttonElement.HasAttribute("href"):
             {
                 var newAElement = document.CreateElement("a");
@@ -200,10 +217,15 @@ public static class HtmlPreprocessor
         }
         
         // Children analysis
-        foreach (var child in element.Children)
-            AnalyzeElement(document, child, content, interpreter);
+        foreach (var child in element.Children) AnalyzeElement(ctx, document, child, content, interpreter);
     }
     
+    class AnalyzingContext(string route, DynamicPage page, int level)
+    {
+        public readonly string Route = route;
+        public readonly DynamicPage Page = page;
+        public readonly int level = level;
+    }
     class InterpreterContext
     {
         private readonly Stack<Dictionary<string, object>> _scopes = new([[]]);

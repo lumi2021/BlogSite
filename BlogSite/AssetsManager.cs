@@ -65,38 +65,62 @@ public class AssetsManager
         }
     }
 
-    public void LoadSingleAsset(string fullPath, StaticRouteNode node, Configuration config)
+    private void LoadSingleAsset(string fullPath, StaticRouteNode node, Configuration config)
     {
         var parentAsset = (DynamicPage)node.Parent?.Asset!;
         var pathRoot = Path.GetFullPath(node.source!);
         var contents = EnumerateDirectoryContents(config, pathRoot);
 
-        var structure = contents.dom;
+        var structure = contents.template;
         var stylesMaps = contents.styles.Select(i => i[pathRoot.Length..]);
         var scriptsMaps = contents.scripts.Select(i => i[pathRoot.Length..]);
         
-        var asset = new DynamicPage(fullPath, parentAsset, structure, [..stylesMaps], [..scriptsMaps]);
+        var asset = new DynamicPage(
+            fullPath,
+            parentAsset,
+            pathRoot ,
+            structure, 
+            [..stylesMaps], 
+            [..scriptsMaps]);
         node.Asset = asset;
         _assetPool.Add(pathRoot, asset);
     }
-    public void LoadAutoRouteAssets(string fullRootPath, AutoRouteNode node, Configuration config)
+    private void LoadAutoRouteAssets(string fullRootPath, AutoRouteNode node, Configuration config)
     {
-        //Console.WriteLine($"fuck? {fullRootPath} {node}");
+        var parentAsset = (DynamicPage)node.Parent?.Asset!;
+        var pathRoot = Path.GetFullPath(node.Path!);
+
+        Queue<string> pathsToAnalyze = new (Directory.GetDirectories(pathRoot));
+        while (pathsToAnalyze.Count > 0)
+        {
+            var path = pathsToAnalyze.Dequeue();
+            
+            foreach (var i in Directory.GetDirectories(path)) pathsToAnalyze.Enqueue(i);
+            try
+            {
+                var contents = EnumerateDirectoryContents(config, pathRoot);
+                var pathName = path[pathRoot.Length..];
+            }
+            catch (Exception e)
+            {
+                // ignored
+            }
+        }
     }
     
-    public static (string dom, string[] styles, string[] scripts) EnumerateDirectoryContents(Configuration config, string path)
+    public static (string template, string[] styles, string[] scripts) EnumerateDirectoryContents(Configuration config, string path)
     {
         if (!Directory.Exists(path)) throw new DirectoryNotFoundException(path);
         
-        var domFiles = config.FileQuery.Dom!.SelectMany(e => Directory.EnumerateFiles(path, e)).ToArray();
+        var templateFiles = config.FileQuery.Dom!.SelectMany(e => Directory.EnumerateFiles(path, e)).ToArray();
         var styleFiles = config.FileQuery.Style!.SelectMany(e => Directory.EnumerateFiles(path, e)).ToArray();
         var scriptFiles = config.FileQuery.Script!.SelectMany(e => Directory.EnumerateFiles(path, e)).ToArray();
 
-        return domFiles.Length switch
+        return templateFiles.Length switch
         {
             0 => throw new NoDomException(config.FileQuery.Dom!, path),
-            > 1 => throw new TooMuchDomException(config.FileQuery.Dom!, path, domFiles),
-            _ => (domFiles[0], styleFiles, scriptFiles)
+            > 1 => throw new TooMuchDomException(config.FileQuery.Dom!, path, templateFiles),
+            _ => (templateFiles[0], styleFiles, scriptFiles)
         };
     }
     private static string PathToRoute(string file, string dir, string route = "/")

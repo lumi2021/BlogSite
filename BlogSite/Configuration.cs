@@ -13,14 +13,8 @@ public class Configuration
     
     [JsonPropertyName("page-host-url")]
     public Uri? PageHostUrl { get; set; }
-    
-    [JsonPropertyName("file-query")]
-    public FileQuery FileQuery { get; set; } = new()
-    {
-        Dom = ["*.html", "*.md", "*.mdx"],
-        Style = ["*.css"],
-        Script = ["*.js"]
-    };
+
+    [JsonPropertyName("file-query")] public FileQuery FileQuery { get; set; } = new();
     
     [JsonPropertyName("global-variables"), JsonConverter(typeof(VariableDictionaryConverter))]
     public Dictionary<string, object> GlobalVariables { get; set; } = [];
@@ -37,12 +31,17 @@ public class Configuration
 
 public record FileQuery
 {
+    [JsonPropertyName("recursive-search")]
+    public bool RecursiveSearch { get; set; } = false;
+
     [JsonPropertyName("dom"), JsonConverter(typeof(StringOrArrayConverter))]
-    public string[]? Dom { get; set; }
+    public string[]? Dom { get; set; } = ["*.html", "*.md", "*.mdx"];
+
     [JsonPropertyName("style"), JsonConverter(typeof(StringOrArrayConverter))]
-    public string[]? Style { get; set; }
+    public string[]? Style { get; set; } = ["*.css"];
+
     [JsonPropertyName("script"), JsonConverter(typeof(StringOrArrayConverter))]
-    public string[]? Script { get; set; }
+    public string[]? Script { get; set; } = ["*.js"];
 }
 
 public record GenericRouteNode
