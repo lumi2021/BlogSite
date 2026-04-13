@@ -23,34 +23,50 @@ public partial class Router
 
         try
         {
-            var currentRoute = (StaticRouteNode?)config.Routes
+            RouteNode? currentRoute = (StaticRouteNode?)config.Routes
                 .FirstOrDefault(e => e is StaticRouteNode @st && st.Path == urlTokens.Dequeue());
+            
             if (currentRoute == null) throw new NotFoundRouterException();
             List<DynamicPage> _pages = [(DynamicPage)currentRoute.Asset];
             
             while (urlTokens.Count > 0)
             {
                 var token = urlTokens.Dequeue();
-                if (currentRoute.StatusSubroutes.TryGetValue(404, out var subroute))
-                    _last404 = [.._pages, (DynamicPage)subroute.Asset];
+                switch (currentRoute)
+                {
+                    case StaticRouteNode @st:
+                    {
+                        if (st.StatusSubroutes.TryGetValue(404, out var subroute))
+                            _last404 = [.._pages, (DynamicPage)subroute.Asset];
 
-                if (currentRoute.NamedSubroutes.TryGetValue(token, out var subRoute))
-                {
-                    currentRoute = (StaticRouteNode)subRoute;
-                    _pages.Add((DynamicPage)subRoute.Asset);
+                        if (st.NamedSubroutes.TryGetValue(token, out var subRoute))
+                        {
+                            currentRoute = subRoute;
+                            _pages.Add((DynamicPage)subRoute.Asset);
+                        }
+                        else
+                        {
+                            urlLastPart = Path.Combine(token, string.Join('/', urlTokens), urlLastPart);
+                            goto hardBreak;
+                        }
+                    
+                    } break;
+                    case AutoRouteNode @at:
+                    {
+                        
+                    } break;
                 }
-                else
-                {
-                    urlLastPart = Path.Combine(token, string.Join('/', urlTokens), urlLastPart);
-                    break;
-                }
+                
             }
+            hardBreak:
+            var staticRoute = (StaticRouteNode)currentRoute;
+            
             
             if (string.IsNullOrEmpty(urlLastPart))
             {
-                while (currentRoute.NamedSubroutes.TryGetValue("", out var subRoute))
+                while (staticRoute.NamedSubroutes.TryGetValue("", out var subRoute))
                 {
-                    currentRoute = (StaticRouteNode)subRoute;
+                    staticRoute = (StaticRouteNode)subRoute;
                     _pages.Add((DynamicPage)subRoute.Asset);
                 }
                 
@@ -67,9 +83,9 @@ public partial class Router
                 var extension = urlLastPart[dot1..];
 
                 var i = 0;
-                while (i < level && currentRoute.NamedSubroutes.TryGetValue("", out var subRoute))
+                while (i < level && staticRoute.NamedSubroutes.TryGetValue("", out var subRoute))
                 {
-                    currentRoute = (StaticRouteNode)subRoute;
+                    staticRoute = (StaticRouteNode)subRoute;
                     _pages.Add((DynamicPage)subRoute.Asset);
                     i++;
                 }
@@ -85,7 +101,7 @@ public partial class Router
                 var fullPath = Path.Combine(pageDir, fname); ;
                 if (!File.Exists(fullPath)) throw new NotFoundRouterException();
                 
-                (bool mustAlwaysUpdate, context.Response.ContentType) = extension switch
+                (var mustAlwaysUpdate, context.Response.ContentType) = extension switch
                 {
                     ".css" => (true, "text/css"),
                     ".js" => (true, "text/js"),

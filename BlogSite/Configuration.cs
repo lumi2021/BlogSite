@@ -75,7 +75,7 @@ public class StaticRouteNode : RouteNode
     public int? Status { get; set; }
     public RoutePathMatching PathMatching { get; set; }
     
-    public string? source { get; set; }
+    public string? Source { get; set; }
     public string? Default { get; set; }
 
     
@@ -120,6 +120,8 @@ public class AutoRouteNode : RouteNode
     public string? Path { get; set; }
     public AutoRouteMode Mode { get; set; }
 
+    public List<StaticRouteNode> Loaded = [];
+    
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -132,7 +134,11 @@ public class AutoRouteNode : RouteNode
 
         sb.Append("\"mode\": ");
         sb.Append($"\"{Mode}\"");
-
+        sb.Append(", ");
+        
+        sb.Append("\"loaded\": ");
+        sb.Append($"[{Loaded.Count}]");
+        
         sb.Append(" }");
 
         return sb.ToString();

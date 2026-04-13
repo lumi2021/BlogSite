@@ -68,7 +68,7 @@ public class AssetsManager
     private void LoadSingleAsset(string fullPath, StaticRouteNode node, Configuration config)
     {
         var parentAsset = (DynamicPage)node.Parent?.Asset!;
-        var pathRoot = Path.GetFullPath(node.source!);
+        var pathRoot = Path.GetFullPath(node.Source!);
         var contents = EnumerateDirectoryContents(config, pathRoot);
 
         var structure = contents.template;
@@ -98,8 +98,26 @@ public class AssetsManager
             foreach (var i in Directory.GetDirectories(path)) pathsToAnalyze.Enqueue(i);
             try
             {
-                var contents = EnumerateDirectoryContents(config, pathRoot);
-                var pathName = path[pathRoot.Length..];
+                var contents = EnumerateDirectoryContents(config, path);
+                var pathName = path[pathRoot.Length..].TrimStart('/');
+                
+                var asset = new DynamicPage(
+                    Path.Combine(node.Path ?? "", pathName),
+                    parentAsset,
+                    pathRoot ,
+                    contents.template, 
+                    [..contents.styles], 
+                    [..contents.scripts]);
+                _assetPool.Add(pathRoot, asset);
+
+                var route = new StaticRouteNode
+                {
+                    Path = pathName,
+                    Source = path,
+                    Asset = asset,
+                };
+                
+                node.Loaded.Add(route);
             }
             catch (Exception e)
             {

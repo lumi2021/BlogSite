@@ -50,7 +50,7 @@ public static class Api
                 n.Path = node.Path?.Trim('/');
                 n.Status = node.Stat;
                 n.PathMatching = node.PathMatching ?? RoutePathMatching.Default;
-                n.source = node.Source ?? throw new Exception("Route node is not associated with a page");
+                n.Source = node.Source ?? throw new Exception("Route node is not associated with a page");
                 n.Default = node.Default;
 
                 if (node.Subroutes is not { Length: > 0 }) return n;
