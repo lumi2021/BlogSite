@@ -59,7 +59,7 @@ public static class HtmlPreprocessor
         // Appending scripts
         while (scripts.Count > 0) 
         {
-            var j = styles.Pop();
+            var j = scripts.Pop();
             var l = document.CreateElement("script");
             l.SetAttribute("src", new Uri(config.PageHostUrl!, j).ToString());
             l.SetAttribute("defer", null);
@@ -157,17 +157,18 @@ public static class HtmlPreprocessor
         }
         
         if (element.HasAttribute("href"))
-            element.SetAttribute("href", Baker.FixLink(element.GetAttribute("href")!, ctx.Page, ctx.level));
-        else if (element.HasAttribute("src"))
-            element.SetAttribute("src", Baker.FixLink(element.GetAttribute("src")!, ctx.Page, ctx.level));
+            element.SetAttribute("href", Baker.FixLink(element.GetAttribute("href")!, ctx.Page));
+        
+        if (element.HasAttribute("src"))
+            element.SetAttribute("src", Baker.FixLink(element.GetAttribute("src")!, ctx.Page));
         
         // Tag-specific analysis
         switch (element)
         {
             case IHtmlImageElement @imgElement when !imgElement.HasAttribute("alt"):
             {
-                var src = imgElement.GetAttribute("href");
-                imgElement.SetAttribute("alt", src == null ? "No src provided" : "Cannot load '{src}'");
+                var src = imgElement.GetAttribute("src");
+                imgElement.SetAttribute("alt", src == null ? "No src provided" : $"Cannot load '{src}'");
             } break;
             
             case IHtmlButtonElement @buttonElement when buttonElement.HasAttribute("href"):

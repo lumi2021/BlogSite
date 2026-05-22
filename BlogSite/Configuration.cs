@@ -27,6 +27,8 @@ public class Configuration
     public string? Global { get; set; }
     [JsonPropertyName("components")]
     public string? Components { get; set; }
+    [JsonPropertyName("assets")]
+    public string? Assets { get; set; }
 }
 
 public record FileQuery

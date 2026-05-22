@@ -13,7 +13,7 @@ public partial class Router
         var url = context.Request.Path.Value ?? throw new NoNullAllowedException("URL value was null");
         var config = Api.Configuration;
 
-        var fullUrl = Path.Combine(config.PageHostUrl?.ToString() ?? "/", url);
+        var fullUrl = new Uri(new Uri(config.PageHostUrl?.ToString() ?? "/"), url).ToString();
         var dirPath = Path.GetDirectoryName(url)?.TrimEnd('/') ?? "";
         var urlLastPart = url[(url.LastIndexOf('/')+1)..];
         
@@ -23,8 +23,9 @@ public partial class Router
 
         try
         {
+            var firstToken = urlTokens.Dequeue();
             RouteNode? currentRoute = (StaticRouteNode?)config.Routes
-                .FirstOrDefault(e => e is StaticRouteNode @st && st.Path == urlTokens.Dequeue());
+                .FirstOrDefault(e => e is StaticRouteNode @st && st.Path == firstToken);
             
             if (currentRoute == null) throw new NotFoundRouterException();
             List<DynamicPage> _pages = [(DynamicPage)currentRoute.Asset];
@@ -75,33 +76,17 @@ public partial class Router
             }
             else
             {
-                var dot0 = urlLastPart.IndexOf('.'); if (dot0 == -1) throw new NotFoundRouterException();
-                var dot1 = urlLastPart.LastIndexOf('.'); if (dot1 == -1 || dot1 - dot0 < 1) throw new NotFoundRouterException();
-                
-                var fileName = urlLastPart[0 .. dot0];
-                var level = int.Parse(urlLastPart[(dot0+1) .. dot1]);
-                var extension = urlLastPart[dot1..];
-
-                var i = 0;
-                while (i < level && staticRoute.NamedSubroutes.TryGetValue("", out var subRoute))
-                {
-                    staticRoute = (StaticRouteNode)subRoute;
-                    _pages.Add((DynamicPage)subRoute.Asset);
-                    i++;
-                }
-                if (i != level) throw new NotFoundRouterException();
-
                 var page = _pages[^1];
                 var pageDir = page.DirPath;
-
-                var fname = fileName + extension;
-                if (!config.FileQuery.RecursiveSearch && Path.GetDirectoryName(fname) != null)
+                
+                var fileName = urlLastPart;
+                if (!config.FileQuery.RecursiveSearch && Path.GetDirectoryName(fileName) != null)
                     throw new ForbiddenRouterException();
                 
-                var fullPath = Path.Combine(pageDir, fname); ;
+                var fullPath = Path.Combine(pageDir, fileName); ;
                 if (!File.Exists(fullPath)) throw new NotFoundRouterException();
                 
-                (var mustAlwaysUpdate, context.Response.ContentType) = extension switch
+                (var mustAlwaysUpdate, context.Response.ContentType) = Path.GetExtension(fileName) switch
                 {
                     ".css" => (true, "text/css"),
                     ".js" => (true, "text/js"),

@@ -90,6 +90,11 @@ public class AssetsManager
         var parentAsset = (DynamicPage)node.Parent?.Asset!;
         var pathRoot = Path.GetFullPath(node.Path!);
 
+        if (!Directory.Exists(pathRoot))
+        {
+            Console.WriteLine($"Warn: {pathRoot} does not exist");
+            return;
+        }
         Queue<string> pathsToAnalyze = new (Directory.GetDirectories(pathRoot));
         while (pathsToAnalyze.Count > 0)
         {

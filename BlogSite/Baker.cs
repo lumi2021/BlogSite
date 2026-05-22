@@ -30,8 +30,8 @@ public partial class Baker
 
         foreach (var (level, page) in pageStack.Index())
         {
-            foreach (var i in page.Stylesheets) stylesheets.Add(ManglePath(i, level));
-            foreach (var i in page.Scripts) scripts.Add(ManglePath(i, level));
+            foreach (var i in page.Stylesheets) stylesheets.Add(ManglePath(i));
+            foreach (var i in page.Scripts) scripts.Add(ManglePath(i));
         }
         
         if (document.Doctype == null!)
@@ -78,16 +78,16 @@ public partial class Baker
         return document.ToHtml(new PrettyMarkupFormatter());
     }
 
-    public static string ManglePath(string path, int level)
+    public static string ManglePath(string path)
     {
         string? dir = Path.GetDirectoryName(path);
         string filename = Path.GetFileNameWithoutExtension(path);
         string extension = Path.GetExtension(path);
 
-        var newName = $"{filename}.{level}{extension}";
+        var newName = $"{filename}{extension}";
         return dir != null ? Path.Combine(dir, newName) : newName;
     }
-    public static string FixLink(string path, DynamicPage page, int level)
+    public static string FixLink(string path, DynamicPage page)
     {
         if (path.StartsWith("https://") || path.StartsWith("http://")) return path;
 
@@ -95,7 +95,7 @@ public partial class Baker
         var pathTrimmed = path.TrimEnd('/');
 
         return Path.Exists(Path.Combine(page.DirPath, pathTrimmed))
-            ? new Uri(config.PageHostUrl ?? throw new NullReferenceException(), Path.Combine(page.Route, ManglePath(path, level))).ToString()
+            ? new Uri(config.PageHostUrl ?? throw new NullReferenceException(), Path.Combine(page.Route, ManglePath(path))).ToString()
             : new Uri(config.PageHostUrl ?? throw new NullReferenceException(), Path.Combine(page.Route, path)).ToString();
     }
 }
