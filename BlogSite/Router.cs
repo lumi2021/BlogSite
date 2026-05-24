@@ -13,8 +13,8 @@ public partial class Router
         var url = context.Request.Path.Value ?? throw new NoNullAllowedException("URL value was null");
         var config = Api.Configuration;
 
-        var fullUrl = new Uri(new Uri(config.PageHostUrl?.ToString() ?? "/"), url).ToString();
-        var dirPath = Path.GetDirectoryName(url)?.TrimEnd('/') ?? "";
+        var fullUrl = new Uri(new Uri(config.PageHostUrl?.ToString() ?? ""), url).ToString();
+        var dirPath = Path.GetDirectoryName(url)?.TrimStart('/').TrimEnd('/') ?? "";
         var urlLastPart = url[(url.LastIndexOf('/')+1)..];
         
         var urlTokens = new Queue<string>(dirPath.Split('/'));
@@ -24,6 +24,29 @@ public partial class Router
         try
         {
             var firstToken = urlTokens.Dequeue();
+
+            if (firstToken == "assets")
+            {
+                var relativePath = string.Join('/', urlTokens);
+                var assetsRoot = Path.GetFullPath(config.Assets ?? "assets");
+
+                var requestedPath = Path.GetFullPath(Path.Combine(assetsRoot, relativePath, urlLastPart));
+                if (!requestedPath.StartsWith(assetsRoot)) throw new ForbiddenRouterException();
+                if (!File.Exists(requestedPath)) throw new NotFoundRouterException();
+
+                var ext = Path.GetExtension(requestedPath);
+
+                (context.Response.ContentType, _) = GetMime(ext);
+
+                context.Response.StatusCode = 200;
+                await context.Response.Body.WriteAsync(
+                    await File.ReadAllBytesAsync(requestedPath, cancellationToken),
+                    cancellationToken
+                );
+
+                return;
+            }
+            
             RouteNode? currentRoute = (StaticRouteNode?)config.Routes
                 .FirstOrDefault(e => e is StaticRouteNode @st && st.Path == firstToken);
             
@@ -86,21 +109,8 @@ public partial class Router
                 var fullPath = Path.Combine(pageDir, fileName); ;
                 if (!File.Exists(fullPath)) throw new NotFoundRouterException();
                 
-                (var mustAlwaysUpdate, context.Response.ContentType) = Path.GetExtension(fileName) switch
-                {
-                    ".css" => (true, "text/css"),
-                    ".js" => (true, "text/js"),
-                    
-                    // images
-                    ".png" => (false, "image/png"),
-                    ".gif" => (false, "image/gif"),
-                    ".jpg" => (false, "image/jpg"),
-                    ".jpeg" => (false, "image/jpeg"),
-                    ".webp" => (false, "image/webp"),
-                    
-                    _ => (true, "text/plain"),
-                };
-                context.Response.StatusCode = 200;
+                (context.Response.ContentType, var mustAlwaysUpdate) = GetMime(Path.GetExtension(fileName));
+                context.Response.StatusCode                          = 200;
                 if (!mustAlwaysUpdate) context.Response.Headers.CacheControl = "public,max-age=86400";
                 await context.Response.Body.WriteAsync(await File.ReadAllBytesAsync(fullPath, cancellationToken), cancellationToken);
             }
@@ -119,5 +129,20 @@ public partial class Router
         {
             Console.WriteLine(e);
         }
+    }
+    
+    private static (string contentType, bool cache) GetMime(string extension)
+    {
+        return extension.ToLowerInvariant() switch
+        {
+            ".css"  => ("text/css", true),
+            ".js"   => ("text/javascript", true),
+            ".png"  => ("image/png", false),
+            ".jpg"  => ("image/jpeg", false),
+            ".jpeg" => ("image/jpeg", false),
+            ".gif"  => ("image/gif", false),
+            ".webp" => ("image/webp", false),
+            _       => ("application/octet-stream", true),
+        };
     }
 }

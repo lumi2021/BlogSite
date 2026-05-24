@@ -30,8 +30,8 @@ public partial class Baker
 
         foreach (var (level, page) in pageStack.Index())
         {
-            foreach (var i in page.Stylesheets) stylesheets.Add(ManglePath(i));
-            foreach (var i in page.Scripts) scripts.Add(ManglePath(i));
+            foreach (var i in page.Stylesheets) stylesheets.Add(ManglePath(Path.GetRelativePath("./", Path.Join(page.DirPath, i))));
+            foreach (var i in page.Scripts) scripts.Add(ManglePath(Path.GetRelativePath("./", Path.Join(page.DirPath, i))));
         }
         
         if (document.Doctype == null!)
@@ -55,18 +55,26 @@ public partial class Baker
 
             foreach (var i in stylesheets)
             {
-                var link =  document.CreateElement("link");
-                link.SetAttribute("rel", "stylesheet");
-                link.SetAttribute("href", Path.Combine(url, i.TrimStart('/')));
-                head.AppendChild(link);
+                // var link =  document.CreateElement("link");
+                // var baseUri = new Uri(url, UriKind.Absolute);
+                // var fullUri = new Uri(baseUri, i.TrimStart('/')).ToString();
+                //
+                // link.SetAttribute("rel", "stylesheet");
+                // link.SetAttribute("href", fullUri);
+                // head.AppendChild(link);
+                
+                var stype = document.CreateElement("style");
+                stype.InnerHtml = await File.ReadAllTextAsync(i, cancellationToken);
+                head.AppendChild(stype);
             }
             
             foreach (var i in scripts)
             {
                 var script = document.CreateElement("script");
-                script.SetAttribute("type", "text/javascript");
-                script.SetAttribute("src", Path.Combine(url, i.TrimStart('/')));
-                script.SetAttribute("defer", null);
+                // script.SetAttribute("type", "text/javascript");
+                // script.SetAttribute("src", Path.Combine(url, i.TrimStart('/')));
+                // script.SetAttribute("defer", null);
+                script.InnerHtml = await File.ReadAllTextAsync(i, cancellationToken);
                 head.AppendChild(script);
             }
         }
@@ -80,12 +88,13 @@ public partial class Baker
 
     public static string ManglePath(string path)
     {
-        string? dir = Path.GetDirectoryName(path);
-        string filename = Path.GetFileNameWithoutExtension(path);
-        string extension = Path.GetExtension(path);
-
-        var newName = $"{filename}{extension}";
-        return dir != null ? Path.Combine(dir, newName) : newName;
+        // string? dir = Path.GetDirectoryName(path);
+        // string filename = Path.GetFileNameWithoutExtension(path);
+        // string extension = Path.GetExtension(path);
+        //
+        // var newName = $"{filename}{extension}";
+        // return dir != null ? Path.Combine(dir, newName) : newName;
+        return path;
     }
     public static string FixLink(string path, DynamicPage page)
     {
